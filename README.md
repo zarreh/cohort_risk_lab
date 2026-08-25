@@ -19,20 +19,30 @@ enrolment rate diverge by race.
 
 ## Status
 
-**Phase 3 complete — the ML half, including the subgroup fairness audit,
-works end to end.** On top of Phase 0 (scaffold), Phase 1 (a real
-30,000-patient synthetic cohort) and Phase 2 (calibrated, cost-thresholded,
-registered models for both label variants): `pipeline/fairness/` computes
-per-stratum calibration, TPR, and enrolment rate with Wilson confidence
-intervals on the held-out validation set, gated by a minimum-n policy so a
-stratum too small to estimate (native American patients: n=25-42 depending
-on split) is shown as insufficient rather than given a misleading point
-estimate. `make train` now writes `subgroup_audit.csv` next to every
-trained model automatically. See
-[evidence/fairness-audit.md](docs/evidence/fairness-audit.md) for the
-`v1_burden` results — Hawaiian and "other" patients show a materially lower
-true-positive rate than white and Asian, visible only because the audit is
-per-stratum. No agent yet — see `docs/PLAN.md` for the phase sequence.
+**Phase 4 complete — the label-choice experiment, A12's one clickable
+artifact, works end to end.** `pipeline/models/compare_labels.py` trains
+`Y_BURDEN` and `Y_COST` on the identical validation population (neither
+sees race as a feature) and compares each model's own top-20% selection by
+race. Result: Black patients are enrolled 5.7 percentage points less often
+under the cost-trained model than the burden-trained one — 2-3x the gap
+seen for any other minority stratum, White patients show none — reproducing
+the Obermeyer et al. (*Science*, 2019) mechanism on synthetic data. See
+[evidence/label-choice-experiment.md](docs/evidence/label-choice-experiment.md).
+
+Getting this right took two attempts: the first version suppressed cost
+only in the label, leaving the model's lookback features untouched and
+with no signal to learn from (verified directly — lookback cost showed
+$147.5K vs. $151.9K for Black vs. White, no gap at all) and producing a
+uniform, uninformative gap across every race instead. Fixed by applying the
+same access-gap factor to a patient's lookback utilisation too, matching
+how a real access barrier would actually show up in history —
+[D-A12-2](docs/architecture/decisions/D-A12-2-injected-access-gap.md).
+
+On top of Phase 3's subgroup fairness audit (per-stratum calibration, TPR,
+and enrolment rate with Wilson CIs, gated by a minimum-n policy), Phase 2's
+calibrated cost-thresholded registered models, Phase 1's real 30,000-patient
+synthetic cohort, and Phase 0's scaffold. No agent yet — see `docs/PLAN.md`
+for the phase sequence.
 
 This will be a research prototype built entirely on synthetic Synthea data.
 It is **not** a medical device, does not diagnose, and does not screen for
