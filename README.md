@@ -19,10 +19,14 @@ enrolment rate diverge by race.
 
 ## Status
 
-**Phase 0 — template shakedown.** Repo scaffold, FastAPI + slowapi + a
-trivial two-node LangGraph skeleton, ruff/mypy-strict/import-linter/pytest,
-MkDocs site building `--strict`, CI wired. No cohort, no trained model, no
-agent yet — see `docs/PLAN.md` for the phase sequence.
+**Phase 1 — data foundation.** Phase 0 (template shakedown) plus a real
+30,000-patient synthetic cohort: generated via Synthea (seed and population
+committed in `data/synthea.config.json`), de-identified per HIPAA Safe
+Harbor with per-patient date shifting (`data/deidentify.py`), joined into a
+compact cohort table (`data/build_cohort.py`), and given a deliberate,
+disclosed access-gap injection that makes the Phase 4 label-choice
+experiment demonstrable (`data/inject_access_gap.py`, D-A12-2). No trained
+model, no agent yet — see `docs/PLAN.md` for the phase sequence.
 
 This will be a research prototype built entirely on synthetic Synthea data.
 It is **not** a medical device, does not diagnose, and does not screen for

@@ -21,9 +21,13 @@ that is enforced structurally rather than asserted in a prompt.
 
 ## Status
 
-**Phase 0 — template shakedown.** Repo scaffold, FastAPI skeleton, a trivial
-two-node graph, quality gates (ruff, mypy --strict, import-linter, pytest,
-this documentation site) wired and green. No model, no cohort, no agent yet.
+**Phase 1 — data foundation.** A real 30,000-patient synthetic cohort exists:
+generated via Synthea, de-identified per HIPAA Safe Harbor (per-patient date
+shifting, ages capped at 90), joined into a compact cohort table, and given
+a deliberate, disclosed access-gap injection — see
+[evidence/data-profile](evidence/data-profile.md) and
+[D-A12-2](architecture/decisions/D-A12-2-injected-access-gap.md). No trained
+model and no agent yet.
 
 > **In one paragraph, for a non-engineer:** this app takes a synthetic
 > hospital's worth of patients, uses a statistical model — not a language

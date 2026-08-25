@@ -1,0 +1,14 @@
+{
+  "_comment": "D-A12-2: the mechanism this app uses to reproduce the Obermeyer et al. (Science, 2019) label-choice failure on synthetic data. Synthea generates realised cost from utilisation with no differential access by race, so an unmodified cohort would show no cost/burden divergence — a null result, not a finding. This factor is applied to realised utilisation and spend only, never to the underlying illness-burden signal (ACTIVE_CONDITION_COUNT), for the target stratum. Every page that shows the label-choice experiment must disclose this file and its values.",
+  "target_column": "RACE",
+  "target_value": "black",
+  "access_reduction_factor": 0.65,
+  "adjusted_fields": [
+    "ENCOUNTER_COUNT",
+    "TOTAL_CLAIM_COST",
+    "TOTAL_PAYER_COVERAGE",
+    "MEDICATION_COUNT",
+    "MEDICATION_TOTAL_COST"
+  ],
+  "untouched_illness_burden_field": "ACTIVE_CONDITION_COUNT"
+}

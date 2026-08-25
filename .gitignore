@@ -2,6 +2,7 @@
 reference/
 
 # ---- Data: fetched or generated at build time, never committed ----
+.tools/
 data/raw/
 data/synthea/
 data/*.db

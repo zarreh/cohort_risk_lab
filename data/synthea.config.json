@@ -1,0 +1,18 @@
+{
+  "_comment": "Committed generation parameters for reproducibility (D-A12-2 discipline: every synthetic mechanism this app relies on is a published, seeded parameter, not a hidden default). The jar and raw CSV output are gitignored; this file plus the small deidentified sample under data/sample/ are what's committed.",
+  "synthea_release": "master-branch-latest",
+  "synthea_jar_sha256_pin": null,
+  "seed": 42,
+  "population_size": 30000,
+  "state": "Massachusetts",
+  "included_csv_files": [
+    "patients.csv",
+    "conditions.csv",
+    "medications.csv",
+    "encounters.csv",
+    "procedures.csv",
+    "observations.csv",
+    "immunizations.csv"
+  ],
+  "excluded_csv_files_reason": "allergies, careplans, claims, claims_transactions, devices, imaging_studies, organizations, payers, payer_transitions, providers, supplies are Synthea outputs this app's features/labels/tools never read. Excluding them at generation time keeps disk and generation time down (D-A12-6, keep-it-simple)."
+}

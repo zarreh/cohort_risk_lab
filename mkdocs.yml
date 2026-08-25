@@ -67,6 +67,8 @@ nav:
       - Overview: architecture/overview.md
       - Decisions:
           - Index: architecture/decisions/index.md
+          - D-A12-2 Injected access gap: architecture/decisions/D-A12-2-injected-access-gap.md
+          - D-A12-6 Shared-code extraction debt: architecture/decisions/D-A12-6-shared-code-extraction-debt.md
   - Evidence:
       - Data profile: evidence/data-profile.md
   - Regulatory basis: regulatory-basis.md
