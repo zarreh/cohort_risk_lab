@@ -70,7 +70,7 @@ explicit_package_bases = true
 files = ["src", "data", "validation", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["sklearn.*", "shap.*", "joblib.*", "scipy.*"]
+module = ["sklearn.*", "shap.*", "joblib.*", "scipy.*", "pyarrow.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
@@ -82,12 +82,13 @@ root_package = "cohort"
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
-name = "Layering: api -> {graph,pipeline} -> {agents,chains,tools,guardrails} -> schemas/settings"
+name = "Layering: api -> graph -> {tools,guardrails} -> pipeline -> schemas/settings"
 type = "layers"
 layers = [
     "cohort.api",
-    "cohort.graph | cohort.pipeline",
+    "cohort.graph",
     "cohort.tools",
+    "cohort.pipeline",
     "cohort.schemas",
 ]
 

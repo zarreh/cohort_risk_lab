@@ -19,29 +19,31 @@ enrolment rate diverge by race.
 
 ## Status
 
-**Phase 4 complete — the label-choice experiment, A12's one clickable
-artifact, works end to end.** `pipeline/models/compare_labels.py` trains
-`Y_BURDEN` and `Y_COST` on the identical validation population (neither
-sees race as a feature) and compares each model's own top-20% selection by
-race. Result: Black patients are enrolled 5.7 percentage points less often
-under the cost-trained model than the burden-trained one — 2-3x the gap
-seen for any other minority stratum, White patients show none — reproducing
-the Obermeyer et al. (*Science*, 2019) mechanism on synthetic data. See
-[evidence/label-choice-experiment.md](docs/evidence/label-choice-experiment.md).
+**Phase 5 complete — the evidence tools and the runtime store they read
+from.** `data/build_cohort_store.py` builds `data/cohort.db` (5.6GB, batched
+Parquet reads to stay under this machine's 14GB RAM — the naive
+whole-table-in-memory version OOM-killed twice on the 16M-row observations
+table, confirmed via `dmesg`) from the de-identified cohort data.
+`cohort.store.CohortStore` gives sub-millisecond, typed, read-only access to
+it. Five tools sit on top — `patient_encounters`, `patient_labs`,
+`care_gap_lookup`, `missing_data_check`, `feature_attribution` (real SHAP
+values from the deployed model, ~8s per call) — every one narrow, typed,
+and filtered through `guardrails/phi_projection.py`'s HIPAA
+minimum-necessary allowlist, never a query the model could construct freely
+([D-A12-7](docs/architecture/decisions/D-A12-7-typed-tools-not-text-to-sql.md),
+rejecting the source notebook's text-to-SQL-plus-keyword-blocklist
+approach).
 
-Getting this right took two attempts: the first version suppressed cost
-only in the label, leaving the model's lookback features untouched and
-with no signal to learn from (verified directly — lookback cost showed
-$147.5K vs. $151.9K for Black vs. White, no gap at all) and producing a
-uniform, uninformative gap across every race instead. Fixed by applying the
-same access-gap factor to a patient's lookback utilisation too, matching
-how a real access barrier would actually show up in history —
-[D-A12-2](docs/architecture/decisions/D-A12-2-injected-access-gap.md).
+Fixing the tools/pipeline import direction surfaced a genuine layering bug:
+`feature_attribution` needs the trained model, which means `tools` must be
+allowed to depend on `pipeline` — the import-linter contract had them the
+wrong way round from Phase 0, when no tool needed pipeline internals yet.
+Reordered to `api -> graph -> {tools,guardrails} -> pipeline -> schemas`.
 
-On top of Phase 3's subgroup fairness audit (per-stratum calibration, TPR,
-and enrolment rate with Wilson CIs, gated by a minimum-n policy), Phase 2's
-calibrated cost-thresholded registered models, Phase 1's real 30,000-patient
-synthetic cohort, and Phase 0's scaffold. No agent yet — see `docs/PLAN.md`
+On top of Phase 4's label-choice experiment, Phase 3's fairness audit,
+Phase 2's calibrated models, Phase 1's cohort, and Phase 0's scaffold. Next:
+the evidence agent and review-queue graph (Phase 6), where D-A12-1 ("the
+LLM is not the risk model") gets structurally enforced. See `docs/PLAN.md`
 for the phase sequence.
 
 This will be a research prototype built entirely on synthetic Synthea data.
