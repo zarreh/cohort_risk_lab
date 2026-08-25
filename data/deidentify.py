@@ -20,14 +20,16 @@ invented for this app:
    patients or with real calendar time — the standard technique behind
    Safe Harbor date de-identification (cf. PhysioNet MIMIC).
 
-Ages over 89 are then capped at the Safe-Harbor-mandated "90" by moving the
-(already-shifted) birthdate, so no downstream computation can ever recover
-an exact age past that boundary.
-
-Output is an intermediate, gitignored parquet set — never the artifact this
-app publishes. `data/build_cohort.py` (next step) is what produces the
-small sample that actually gets committed, and it re-checks these
-guarantees before writing anything to `data/sample/`.
+Ages over 89 are handled downstream, not here: Safe Harbor requires that no
+*disclosed* age exceed 89, not that internal analytic data be mutated.
+Rewriting a shifted birthdate to force a capped age would put it *after*
+that patient's own early-life clinical events, breaking exactly the
+temporal consistency `pipeline/splits.py` depends on. Instead, every place
+that computes or displays an age from this data — `pipeline/features/extract.py`,
+`docs/generate_plots.py` — clips it to `MAX_REPORTABLE_AGE_YEARS` itself.
+The true (shifted) birthdate is preserved here because this is a gitignored
+intermediate, never the artifact this app publishes: `data/build_cohort.py`
+drops dates from the one committed sample entirely.
 """
 
 from __future__ import annotations
@@ -43,9 +45,9 @@ CONFIG_PATH = REPO_ROOT / "data" / "synthea.config.json"
 RAW_DIR = REPO_ROOT / "data" / "synthea" / "csv"
 OUT_DIR = REPO_ROOT / "data" / "interim" / "deidentified"
 
-# Fixed "as of" date used only to decide the 90+ age cap after shifting —
-# not a real calendar reference, and never exposed downstream.
-ANALYSIS_DATE = pd.Timestamp("2025-01-01")
+# The Safe Harbor age cap. Applied wherever age is computed from this
+# data (pipeline/features/extract.py, docs/generate_plots.py) — not here,
+# see module docstring.
 MAX_REPORTABLE_AGE_YEARS = 90
 DATE_SHIFT_RANGE_DAYS = 365  # +/- one year, per patient
 
@@ -94,11 +96,6 @@ def deidentify_patients(seed: int) -> pd.DataFrame:
 
     patients["BIRTHDATE"] = _shift_dates(patients["BIRTHDATE"], patients["OFFSET_DAYS"])
     patients["DEATHDATE"] = _shift_dates(patients["DEATHDATE"], patients["OFFSET_DAYS"])
-
-    age_at_analysis = (ANALYSIS_DATE - patients["BIRTHDATE"].dt.tz_localize(None)).dt.days / 365.25
-    capped_birthdate = ANALYSIS_DATE - pd.Timedelta(days=MAX_REPORTABLE_AGE_YEARS * 365.25)
-    over_cap = age_at_analysis > MAX_REPORTABLE_AGE_YEARS
-    patients.loc[over_cap, "BIRTHDATE"] = capped_birthdate.tz_localize("UTC")
 
     return patients
 
