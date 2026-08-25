@@ -68,10 +68,13 @@ nav:
       - Decisions:
           - Index: architecture/decisions/index.md
           - D-A12-2 Injected access gap: architecture/decisions/D-A12-2-injected-access-gap.md
+          - D-A12-3 Calibration over equalised odds: architecture/decisions/D-A12-3-calibration-over-equalised-odds.md
           - D-A12-4 Illness-burden proxy: architecture/decisions/D-A12-4-illness-burden-proxy.md
+          - D-A12-5 Min-n and confidence intervals: architecture/decisions/D-A12-5-min-n-confidence-intervals.md
           - D-A12-6 Shared-code extraction debt: architecture/decisions/D-A12-6-shared-code-extraction-debt.md
   - Evidence:
       - Data profile: evidence/data-profile.md
+      - Subgroup fairness audit: evidence/fairness-audit.md
   - Regulatory basis: regulatory-basis.md
   - Run it yourself: run-it-yourself.md
   - API: api.md

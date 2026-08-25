@@ -23,6 +23,7 @@ from sklearn.pipeline import Pipeline
 
 from cohort.pipeline.calibration.reliability import expected_calibration_error
 from cohort.pipeline.cards.model_card import generate_model_card
+from cohort.pipeline.fairness.subgroup_audit import DEFAULT_MIN_N, compute_subgroup_metrics
 from cohort.pipeline.features.extract import (
     BINARY_FEATURES,
     CATEGORICAL_FEATURES,
@@ -92,13 +93,15 @@ def train(label_name: str, version: str) -> Path:
         label_name, patients, included_ids, forward_cond, forward_enc, forward_med
     )
 
-    data = features.merge(labels, on="PATIENT_ID")
-    x = data[FEATURE_COLUMNS]
-    y = data["Y"].to_numpy()
-
-    x_train, x_val, y_train, y_val = train_test_split(
-        x, y, test_size=0.2, random_state=42, stratify=y
+    data = features.merge(labels, on="PATIENT_ID").merge(
+        patients[["PATIENT_ID", "RACE"]], on="PATIENT_ID"
     )
+
+    train_data, val_data = train_test_split(
+        data, test_size=0.2, random_state=42, stratify=data["Y"]
+    )
+    x_train, y_train = train_data[FEATURE_COLUMNS], train_data["Y"].to_numpy()
+    x_val, y_val = val_data[FEATURE_COLUMNS], val_data["Y"].to_numpy()
 
     base_pipeline = Pipeline(
         steps=[
@@ -132,9 +135,19 @@ def train(label_name: str, version: str) -> Path:
         feature_names=FEATURE_COLUMNS,
     )
 
+    # Computed on the held-out validation set only — never the training
+    # data the model has already fit, and never the whole cohort, either
+    # of which would report an overly optimistic (or simply wrong) picture
+    # of how the model behaves on data it hasn't seen (PORTFOLIO_PLAN_V3.md
+    # §7 A12: "the fairness number is reported per subgroup").
+    subgroup_audit = compute_subgroup_metrics(
+        y_val, y_val_proba, threshold, val_data["RACE"], min_n=DEFAULT_MIN_N
+    )
+
     registry_dir = Path(get_settings().registry_dir)
     version_dir = save_model_artifact(calibrated, metadata, registry_dir)
     (version_dir / "model_card.md").write_text(generate_model_card(metadata))
+    subgroup_audit.to_csv(version_dir / "subgroup_audit.csv", index=False)
 
     print(
         f"Trained {version} on {label_name}: AUROC={metrics['auroc']:.3f}, "

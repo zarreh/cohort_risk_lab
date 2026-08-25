@@ -19,18 +19,20 @@ enrolment rate diverge by race.
 
 ## Status
 
-**Phase 2 complete — the ML half works end to end.** On top of Phase 0
-(scaffold) and Phase 1 (a real 30,000-patient synthetic cohort): a
-leakage-safe temporal split (`pipeline/splits.py`), both label builders
-(`pipeline/labels/`), feature extraction with race/ethnicity deliberately
-excluded as model inputs (`pipeline/features/`), isotonic calibration and a
-cost-based operating point (`pipeline/calibration/`, `pipeline/thresholds/`),
-and a versioned model registry with an auto-generated model card
-(`pipeline/registry.py`, `pipeline/cards/`). `make train --label Y_BURDEN`
-and `--label Y_COST` both produce a working calibrated model
-(AUROC 0.75 / 0.85, ECE < 0.02) — the two the Phase 4 label-choice
-experiment compares. No agent yet — see `docs/PLAN.md` for the phase
-sequence.
+**Phase 3 complete — the ML half, including the subgroup fairness audit,
+works end to end.** On top of Phase 0 (scaffold), Phase 1 (a real
+30,000-patient synthetic cohort) and Phase 2 (calibrated, cost-thresholded,
+registered models for both label variants): `pipeline/fairness/` computes
+per-stratum calibration, TPR, and enrolment rate with Wilson confidence
+intervals on the held-out validation set, gated by a minimum-n policy so a
+stratum too small to estimate (native American patients: n=25-42 depending
+on split) is shown as insufficient rather than given a misleading point
+estimate. `make train` now writes `subgroup_audit.csv` next to every
+trained model automatically. See
+[evidence/fairness-audit.md](docs/evidence/fairness-audit.md) for the
+`v1_burden` results — Hawaiian and "other" patients show a materially lower
+true-positive rate than white and Asian, visible only because the audit is
+per-stratum. No agent yet — see `docs/PLAN.md` for the phase sequence.
 
 This will be a research prototype built entirely on synthetic Synthea data.
 It is **not** a medical device, does not diagnose, and does not screen for
