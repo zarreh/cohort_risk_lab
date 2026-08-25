@@ -67,6 +67,7 @@ nav:
       - Overview: architecture/overview.md
       - Decisions:
           - Index: architecture/decisions/index.md
+          - D-A12-1 LLM is not the risk model: architecture/decisions/D-A12-1-llm-is-not-the-risk-model.md
           - D-A12-2 Injected access gap: architecture/decisions/D-A12-2-injected-access-gap.md
           - D-A12-3 Calibration over equalised odds: architecture/decisions/D-A12-3-calibration-over-equalised-odds.md
           - D-A12-4 Illness-burden proxy: architecture/decisions/D-A12-4-illness-burden-proxy.md

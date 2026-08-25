@@ -2,7 +2,7 @@
 
 | ID | Decision |
 |---|---|
-| D-A12-1 | The LLM is not the risk model, and how that is structurally enforced *(written in Phase 6)* |
+| [D-A12-1](D-A12-1-llm-is-not-the-risk-model.md) | The LLM is not the risk model, and how that is structurally enforced |
 | [D-A12-2](D-A12-2-injected-access-gap.md) | The injected access gap, and why disclosing it is stronger than hiding it |
 | [D-A12-3](D-A12-3-calibration-over-equalised-odds.md) | Calibration over equalised odds |
 | [D-A12-4](D-A12-4-illness-burden-proxy.md) | The illness-burden proxy, and excluding race as a model feature |

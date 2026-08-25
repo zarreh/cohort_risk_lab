@@ -19,32 +19,32 @@ enrolment rate diverge by race.
 
 ## Status
 
-**Phase 5 complete — the evidence tools and the runtime store they read
-from.** `data/build_cohort_store.py` builds `data/cohort.db` (5.6GB, batched
-Parquet reads to stay under this machine's 14GB RAM — the naive
-whole-table-in-memory version OOM-killed twice on the 16M-row observations
-table, confirmed via `dmesg`) from the de-identified cohort data.
-`cohort.store.CohortStore` gives sub-millisecond, typed, read-only access to
-it. Five tools sit on top — `patient_encounters`, `patient_labs`,
-`care_gap_lookup`, `missing_data_check`, `feature_attribution` (real SHAP
-values from the deployed model, ~8s per call) — every one narrow, typed,
-and filtered through `guardrails/phi_projection.py`'s HIPAA
-minimum-necessary allowlist, never a query the model could construct freely
-([D-A12-7](docs/architecture/decisions/D-A12-7-typed-tools-not-text-to-sql.md),
-rejecting the source notebook's text-to-SQL-plus-keyword-blocklist
-approach).
+**Phase 6 complete — the evidence agent, the case-review graph, and D-A12-1
+("the LLM is not the risk model") structurally enforced, not asserted.**
+`graph/nodes/load_case.py` scores each patient from the deployed model
+before any LLM runs; `schemas/case_brief.py`'s `CaseBrief` has no field to
+hold a decision; `guardrails/no_decision_guard.py` checks the brief's two
+free-text fields for decision language and `verify_brief` routes a
+violation back for revision (up to `MAX_REVISIONS`) rather than letting it
+through; and the actual decision comes only from a real `interrupt()` /
+`Command(resume=...)` cycle, verified against the live langgraph
+checkpointer runtime, not mocked. See
+[D-A12-1](docs/architecture/decisions/D-A12-1-llm-is-not-the-risk-model.md)
+for all four controls and why none of them depend on prompt wording.
 
-Fixing the tools/pipeline import direction surfaced a genuine layering bug:
-`feature_attribution` needs the trained model, which means `tools` must be
-allowed to depend on `pipeline` — the import-linter contract had them the
-wrong way round from Phase 0, when no tool needed pipeline internals yet.
-Reordered to `api -> graph -> {tools,guardrails} -> pipeline -> schemas`.
+No OpenAI API key is available in this build environment, so the two
+LLM-backed pieces (the evidence agent's tool-calling loop, the brief-writer
+chain) are verified structurally — the graph compiles to the exact node
+shape the plan calls for, `load_case` runs for real against a trained
+model, and every deterministic node (routing, the guard, the HITL
+interrupt/resume cycle) is tested against fake doubles or the real
+langgraph runtime — but not against a live model response. The graph fails
+exactly at the network call, confirmed directly, not assumed.
 
-On top of Phase 4's label-choice experiment, Phase 3's fairness audit,
-Phase 2's calibrated models, Phase 1's cohort, and Phase 0's scaffold. Next:
-the evidence agent and review-queue graph (Phase 6), where D-A12-1 ("the
-LLM is not the risk model") gets structurally enforced. See `docs/PLAN.md`
-for the phase sequence.
+On top of Phase 5's tools and store, Phase 4's label-choice experiment,
+Phase 3's fairness audit, Phase 2's calibrated models, Phase 1's cohort,
+and Phase 0's scaffold. Next: API, persistence, and observability
+(Phase 7). See `docs/PLAN.md` for the phase sequence.
 
 This will be a research prototype built entirely on synthetic Synthea data.
 It is **not** a medical device, does not diagnose, and does not screen for
