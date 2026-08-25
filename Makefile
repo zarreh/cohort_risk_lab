@@ -30,6 +30,7 @@ data:
 	uv run python -m data.deidentify
 	uv run python -m data.build_cohort
 	uv run python -m data.inject_access_gap
+	uv run python -m data.build_cohort_store
 
 train:
 	uv run python -m cohort.pipeline.models.train
