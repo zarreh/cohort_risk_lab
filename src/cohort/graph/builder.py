@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -44,6 +45,7 @@ def build_case_review_graph(
     model_version_dir: Path,
     feature_table: pd.DataFrame,
     store: CohortStore,
+    checkpointer: BaseCheckpointSaver[str] | None = None,
 ) -> CaseReviewGraph:
     """The only function that wires the case-review graph's nodes and
     edges.
@@ -57,6 +59,11 @@ def build_case_review_graph(
     `load_case` sets `risk_score`/`risk_tier` from the deployed model
     directly — no node downstream of it can write to those fields, which
     is D-A12-1 enforced by the state shape itself, not by convention.
+
+    `checkpointer` defaults to an in-process `MemorySaver` when not given
+    (tests, `make dev` before persistence matters). The API wires a real
+    `AsyncSqliteSaver` via `api/main.py`'s lifespan — a review can be
+    interrupted and resumed across process restarts, not just within one.
     """
     tools = build_tools(store, model_version_dir, feature_table)
     fast_model = build_fast_model(settings)
@@ -98,4 +105,4 @@ def build_case_review_graph(
     workflow.add_edge("await_decision", "record_decision")
     workflow.add_edge("record_decision", END)
 
-    return workflow.compile(checkpointer=MemorySaver())
+    return workflow.compile(checkpointer=checkpointer or MemorySaver())

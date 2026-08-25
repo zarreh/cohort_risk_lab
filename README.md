@@ -19,32 +19,39 @@ enrolment rate diverge by race.
 
 ## Status
 
-**Phase 6 complete — the evidence agent, the case-review graph, and D-A12-1
-("the LLM is not the risk model") structurally enforced, not asserted.**
-`graph/nodes/load_case.py` scores each patient from the deployed model
-before any LLM runs; `schemas/case_brief.py`'s `CaseBrief` has no field to
-hold a decision; `guardrails/no_decision_guard.py` checks the brief's two
-free-text fields for decision language and `verify_brief` routes a
-violation back for revision (up to `MAX_REVISIONS`) rather than letting it
-through; and the actual decision comes only from a real `interrupt()` /
-`Command(resume=...)` cycle, verified against the live langgraph
-checkpointer runtime, not mocked. See
-[D-A12-1](docs/architecture/decisions/D-A12-1-llm-is-not-the-risk-model.md)
-for all four controls and why none of them depend on prompt wording.
+**Phase 7 complete — a working FastAPI app with persistence,
+server-sent-event streaming, and a real SQLite-backed langgraph
+checkpointer**, verified end to end against the live HTTP API (not just
+unit tests):
 
-No OpenAI API key is available in this build environment, so the two
-LLM-backed pieces (the evidence agent's tool-calling loop, the brief-writer
-chain) are verified structurally — the graph compiles to the exact node
-shape the plan calls for, `load_case` runs for real against a trained
-model, and every deterministic node (routing, the guard, the HITL
-interrupt/resume cycle) is tested against fake doubles or the real
-langgraph runtime — but not against a live model response. The graph fails
-exactly at the network call, confirmed directly, not assumed.
+```
+curl localhost:8000/queue?status=pending   # 19,409 real flagged patients
+curl localhost:8000/queue/{patient_id}      # a real case detail
+curl -X POST localhost:8000/queue/{id}/start  # fails exactly at the OpenAI
+                                               # credential check — confirmed
+                                               # via the actual server log
+```
 
-On top of Phase 5's tools and store, Phase 4's label-choice experiment,
-Phase 3's fairness audit, Phase 2's calibrated models, Phase 1's cohort,
-and Phase 0's scaffold. Next: API, persistence, and observability
-(Phase 7). See `docs/PLAN.md` for the phase sequence.
+`store/queue_store.py` persists every review case and its node-by-node
+events — the same replay-from-store discipline A2's `run_store.py` uses,
+adapted for a graph that pauses at `interrupt()` instead of running to
+completion in one pass (`api/run_executor.py`'s `start_review` stops the
+moment the graph interrupts; `resume_review` is the separate entrypoint a
+clinician's decision continues). `api/main.py`'s lifespan opens a real
+`AsyncSqliteSaver` at startup, so an interrupted review survives a server
+restart, not just an in-process pause.
+
+`data/populate_queue.py` batch-scores the whole cohort with the deployed
+model and enqueues everyone above threshold — separated from the
+interactive API so starting the server never blocks on rescoring 30,000+
+patients. Also caught a real bug in passing: `tests/api/` route tests
+proved 404/409/422 error paths work correctly before ever touching a live
+graph.
+
+On top of Phase 6's agent and D-A12-1 enforcement, Phase 5's tools and
+store, Phase 4's label-choice experiment, Phase 3's fairness audit, Phase
+2's calibrated models, Phase 1's cohort, and Phase 0's scaffold. Next: the
+Next.js frontend (Phase 8). See `docs/PLAN.md` for the phase sequence.
 
 This will be a research prototype built entirely on synthetic Synthea data.
 It is **not** a medical device, does not diagnose, and does not screen for

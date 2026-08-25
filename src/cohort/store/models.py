@@ -53,3 +53,30 @@ class LabObservation(BaseModel):
     description: str
     value: str
     units: str | None
+
+
+class ReviewCase(BaseModel):
+    """One row in the review queue — the operational record of a patient's
+    case review, from being flagged through to a clinician's decision."""
+
+    patient_id: str
+    risk_score: float
+    risk_tier: str
+    status: str  # "pending" | "in_review" | "awaiting_decision" | "decided"
+    created_at: str
+    updated_at: str
+    decision: str | None
+    override_notes: str | None
+    decided_at: str | None
+
+
+class ReviewEvent(BaseModel):
+    """One node-execution event in a case review, persisted so a run is
+    replayable from the store at any time — during execution or long after
+    it finished."""
+
+    patient_id: str
+    sequence: int
+    node: str
+    payload_json: str
+    created_at: str

@@ -89,9 +89,14 @@ def _apply_lookback_access_gap(features: pd.DataFrame, patients: pd.DataFrame) -
     return adjusted[features.columns]
 
 
-def _load_split_data() -> tuple[
-    pd.DataFrame, pd.DataFrame, pd.Series, pd.DataFrame, pd.DataFrame, pd.DataFrame
-]:
+def build_scored_feature_table() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Loads the deidentified cohort and returns `(patients, features)` —
+    the same access-gap-adjusted feature table both training and the
+    running API score patients against. Public (not `_`-prefixed) because
+    `api/deps.py::get_feature_table` needs the identical table a deployed
+    model was trained on; duplicating this loading logic there would risk
+    the two silently drifting apart.
+    """
     patients = pd.read_parquet(DEIDENTIFIED_DIR / "patients.parquet").rename(
         columns={"Id": "PATIENT_ID"}
     )
@@ -100,12 +105,29 @@ def _load_split_data() -> tuple[
     medications = pd.read_parquet(DEIDENTIFIED_DIR / "medications.parquet")
 
     index_dates = compute_index_dates(encounters)
-    lookback_enc, forward_enc = split_events(encounters, index_dates, date_col="START")
-    lookback_cond, forward_cond = split_events(conditions, index_dates, date_col="START")
-    lookback_med, forward_med = split_events(medications, index_dates, date_col="START")
+    lookback_enc, _ = split_events(encounters, index_dates, date_col="START")
+    lookback_cond, _ = split_events(conditions, index_dates, date_col="START")
+    lookback_med, _ = split_events(medications, index_dates, date_col="START")
 
     features = build_feature_table(patients, index_dates, lookback_cond, lookback_enc, lookback_med)
     features = _apply_lookback_access_gap(features, patients)
+    return patients, features
+
+
+def _load_split_data() -> tuple[
+    pd.DataFrame, pd.DataFrame, pd.Series, pd.DataFrame, pd.DataFrame, pd.DataFrame
+]:
+    patients, features = build_scored_feature_table()
+
+    encounters = pd.read_parquet(DEIDENTIFIED_DIR / "encounters.parquet")
+    conditions = pd.read_parquet(DEIDENTIFIED_DIR / "conditions.parquet")
+    medications = pd.read_parquet(DEIDENTIFIED_DIR / "medications.parquet")
+
+    index_dates = compute_index_dates(encounters)
+    _, forward_enc = split_events(encounters, index_dates, date_col="START")
+    _, forward_cond = split_events(conditions, index_dates, date_col="START")
+    _, forward_med = split_events(medications, index_dates, date_col="START")
+
     included_ids = index_dates.loc[index_dates["INCLUDED"], "PATIENT_ID"]
 
     return patients, features, included_ids, forward_enc, forward_cond, forward_med

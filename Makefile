@@ -33,7 +33,9 @@ data:
 	uv run python -m data.build_cohort_store
 
 train:
-	uv run python -m cohort.pipeline.models.train
+	uv run python -m cohort.pipeline.models.train --label Y_BURDEN --version v1_burden
+	uv run python -m cohort.pipeline.models.train --label Y_COST --version v1_cost
+	uv run python -m data.populate_queue
 
 docs:
 	uv run mkdocs serve

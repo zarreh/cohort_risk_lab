@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     data_dir: str = "data"
     cohort_db_path: str = "data/cohort.db"
     queue_store_path: str = "data/queue.db"
+    checkpoint_db_path: str = "data/checkpoints.db"
     registry_dir: str = "artifacts/registry"
 
     rate_limit_per_minute: int = 20
