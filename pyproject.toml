@@ -1,0 +1,114 @@
+[project]
+name = "cohort"
+version = "0.1.0"
+description = "A12 — Cohort Risk & Review Lab: calibrated care-management risk model with per-subgroup fairness audit and an evidence-assembling review agent"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "langgraph>=0.2",
+    "langchain-core>=0.3",
+    "langchain-openai>=0.2",
+    "sse-starlette>=2.1",
+    "structlog>=24.4",
+    "slowapi>=0.1.9",
+    "pandas>=2.2",
+    "pyarrow>=17.0",
+    "scikit-learn>=1.5",
+    "shap>=0.46",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "import-linter>=2.1",
+    "detect-secrets>=1.5",
+    "pre-commit>=4.0",
+    "types-requests",
+    "respx>=0.23",
+    "pandas-stubs>=2.2",
+]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.27",
+    "mkdocs-gen-files>=0.5",
+    "mkdocs-literate-nav>=0.6",
+    "mkdocs-glightbox>=0.4",
+    "matplotlib>=3.9",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cohort"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "TID"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+explicit_package_bases = true
+files = ["src", "data", "validation", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["sklearn.*", "shap.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.importlinter]
+root_package = "cohort"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Layering: api -> {graph,pipeline} -> {agents,chains,tools,guardrails} -> schemas/settings"
+type = "layers"
+layers = [
+    "cohort.api",
+    "cohort.graph | cohort.pipeline",
+    "cohort.tools",
+    "cohort.schemas",
+]
+
+[[tool.importlinter.contracts]]
+name = "chains never import nodes"
+type = "forbidden"
+source_modules = ["cohort.graph.chains"]
+forbidden_modules = ["cohort.graph.nodes"]
+
+[[tool.importlinter.contracts]]
+name = "tools never import graph"
+type = "forbidden"
+source_modules = ["cohort.tools"]
+forbidden_modules = ["cohort.graph"]
+
+[[tool.importlinter.contracts]]
+name = "pipeline is model-only: no langchain/langgraph imports (D-A12-1)"
+type = "forbidden"
+source_modules = ["cohort.pipeline"]
+forbidden_modules = ["langchain_core", "langchain_openai", "langgraph"]
+
+[[tool.importlinter.contracts]]
+name = "no DSPy or DeepEval outside validation/optimize"
+type = "forbidden"
+source_modules = ["cohort"]
+forbidden_modules = ["dspy", "deepeval"]
