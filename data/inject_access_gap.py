@@ -4,16 +4,20 @@ utilisation and spend for one demographic stratum, at equal illness burden.
 This is not a bug being simulated by accident: Synthea generates cost from
 utilisation with no differential access by race, so training on cost vs.
 illness-burden labels over an unmodified cohort shows little divergence — a
-null result dressed as a finding. The mechanism below is what makes the
-label-choice experiment (`pipeline/labels/`, Phase 4) actually demonstrate
-the failure mode Obermeyer et al. (Science, 2019) documented, instead of
-merely claiming to.
+null result dressed as a finding. The mechanism (`apply_access_gap`, in
+`cohort.pipeline.labels.access_gap` so the Phase 4 label builders can reuse
+it on forward-window aggregates rather than reimplementing it) is what
+makes the label-choice experiment actually demonstrate the failure mode
+Obermeyer et al. (Science, 2019) documented, instead of merely claiming to.
 
-Every parameter is in the committed `data/access_gap.config.json`. Every
-page in this app that shows the resulting divergence must disclose this
-file — see docs/architecture/decisions (D-A12-2). The claim being
-demonstrated is that the subgroup audit *catches* an access gap, not that
-this app discovered one in the wild.
+This script applies it once to the Phase 1 lifetime-aggregate cohort table,
+purely so `docs/evidence/data-profile.md` has something concrete to show
+before any model exists. Every parameter is in the committed
+`data/access_gap.config.json`. Every page in this app that shows the
+resulting divergence must disclose this file — see
+docs/architecture/decisions (D-A12-2). The claim being demonstrated is that
+the subgroup audit *catches* an access gap, not that this app discovered
+one in the wild.
 """
 
 from __future__ import annotations
@@ -23,29 +27,13 @@ from pathlib import Path
 
 import pandas as pd
 
+from cohort.pipeline.labels.access_gap import AccessGapConfig, apply_access_gap
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = REPO_ROOT / "data" / "access_gap.config.json"
 COHORT_PATH = REPO_ROOT / "data" / "cohort" / "cohort.parquet"
 SAMPLE_DIR = REPO_ROOT / "data" / "sample"
 SAMPLE_SIZE = 50
-
-
-def inject_access_gap(cohort: pd.DataFrame, config: dict[str, object]) -> pd.DataFrame:
-    target_column = str(config["target_column"])
-    target_value = config["target_value"]
-    factor = float(config["access_reduction_factor"])  # type: ignore[arg-type]
-    adjusted_fields = list(config["adjusted_fields"])  # type: ignore[call-overload]
-
-    result = cohort.copy()
-    affected = result[target_column] == target_value
-    result["ACCESS_GAP_AFFECTED"] = affected
-
-    for field in adjusted_fields:
-        adjusted_col = f"ADJUSTED_{field}"
-        result[adjusted_col] = result[field].astype("float64")
-        result.loc[affected, adjusted_col] = result.loc[affected, field].astype("float64") * factor
-
-    return result
 
 
 def _write_sample(cohort: pd.DataFrame) -> None:
@@ -64,10 +52,10 @@ def _write_sample(cohort: pd.DataFrame) -> None:
 
 
 def main() -> None:
-    config: dict[str, object] = json.loads(CONFIG_PATH.read_text())
+    config: AccessGapConfig = json.loads(CONFIG_PATH.read_text())
     cohort = pd.read_parquet(COHORT_PATH)
 
-    adjusted = inject_access_gap(cohort, config)
+    adjusted = apply_access_gap(cohort, config)
     adjusted.to_parquet(COHORT_PATH, index=False)
 
     n_affected = int(adjusted["ACCESS_GAP_AFFECTED"].sum())
