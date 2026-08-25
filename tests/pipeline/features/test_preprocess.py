@@ -44,3 +44,16 @@ def test_preprocessor_fit_on_train_transforms_unseen_categories_without_error() 
     test[CATEGORICAL_FEATURES[0]] = "UNSEEN_CATEGORY"
     transformed = preprocessor.transform(test)
     assert not np.isnan(transformed).any()
+
+
+def test_fitted_preprocessor_is_picklable(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Regression test: the binary pipeline once used a lambda, which
+    fits and transforms fine but can't be joblib-dumped — a failure mode
+    unit tests without this check would never catch."""
+    import joblib
+
+    preprocessor = build_preprocessor()
+    preprocessor.fit(_feature_table())
+    joblib.dump(preprocessor, tmp_path / "preprocessor.joblib")
+    loaded = joblib.load(tmp_path / "preprocessor.joblib")
+    assert loaded.transform(_feature_table()).shape[0] == 20
