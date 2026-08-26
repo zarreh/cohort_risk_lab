@@ -89,20 +89,26 @@ def _apply_lookback_access_gap(features: pd.DataFrame, patients: pd.DataFrame) -
     return adjusted[features.columns]
 
 
-def build_scored_feature_table() -> tuple[pd.DataFrame, pd.DataFrame]:
+def build_scored_feature_table(
+    deidentified_dir: Path = DEIDENTIFIED_DIR,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Loads the deidentified cohort and returns `(patients, features)` —
     the same access-gap-adjusted feature table both training and the
     running API score patients against. Public (not `_`-prefixed) because
     `api/deps.py::get_feature_table` needs the identical table a deployed
     model was trained on; duplicating this loading logic there would risk
     the two silently drifting apart.
+
+    `deidentified_dir` defaults to the real pipeline's data directory but
+    is overridable so `validation/metric_floors.py` can run the identical
+    loading + feature logic against the committed frozen fixture instead.
     """
-    patients = pd.read_parquet(DEIDENTIFIED_DIR / "patients.parquet").rename(
+    patients = pd.read_parquet(deidentified_dir / "patients.parquet").rename(
         columns={"Id": "PATIENT_ID"}
     )
-    encounters = pd.read_parquet(DEIDENTIFIED_DIR / "encounters.parquet")
-    conditions = pd.read_parquet(DEIDENTIFIED_DIR / "conditions.parquet")
-    medications = pd.read_parquet(DEIDENTIFIED_DIR / "medications.parquet")
+    encounters = pd.read_parquet(deidentified_dir / "encounters.parquet")
+    conditions = pd.read_parquet(deidentified_dir / "conditions.parquet")
+    medications = pd.read_parquet(deidentified_dir / "medications.parquet")
 
     index_dates = compute_index_dates(encounters)
     lookback_enc, _ = split_events(encounters, index_dates, date_col="START")
@@ -114,14 +120,14 @@ def build_scored_feature_table() -> tuple[pd.DataFrame, pd.DataFrame]:
     return patients, features
 
 
-def _load_split_data() -> tuple[
-    pd.DataFrame, pd.DataFrame, pd.Series, pd.DataFrame, pd.DataFrame, pd.DataFrame
-]:
-    patients, features = build_scored_feature_table()
+def _load_split_data(
+    deidentified_dir: Path = DEIDENTIFIED_DIR,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    patients, features = build_scored_feature_table(deidentified_dir)
 
-    encounters = pd.read_parquet(DEIDENTIFIED_DIR / "encounters.parquet")
-    conditions = pd.read_parquet(DEIDENTIFIED_DIR / "conditions.parquet")
-    medications = pd.read_parquet(DEIDENTIFIED_DIR / "medications.parquet")
+    encounters = pd.read_parquet(deidentified_dir / "encounters.parquet")
+    conditions = pd.read_parquet(deidentified_dir / "conditions.parquet")
+    medications = pd.read_parquet(deidentified_dir / "medications.parquet")
 
     index_dates = compute_index_dates(encounters)
     _, forward_enc = split_events(encounters, index_dates, date_col="START")
@@ -172,8 +178,23 @@ def split_train_validation(
     return train_split, val_split
 
 
-def train(label_name: str, version: str) -> Path:
-    patients, features, included_ids, forward_enc, forward_cond, forward_med = _load_split_data()
+def fit_and_evaluate(
+    label_name: str, deidentified_dir: Path = DEIDENTIFIED_DIR
+) -> tuple[CalibratedClassifierCV, ModelMetadata, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """The shared fit/evaluate core: loads data, builds the label, splits,
+    fits the calibrated pipeline, and computes held-out metrics + the
+    subgroup audit. Returns `(pipeline, metadata, subgroup_audit, features,
+    patients)`.
+
+    `train()` below calls this and persists the result to the registry;
+    `validation/metric_floors.py` calls it directly against the committed
+    frozen fixture to check regression floors without ever writing to the
+    registry — the same fitting logic either way, so a floor can never
+    silently drift from what `make train` actually does.
+    """
+    patients, features, included_ids, forward_enc, forward_cond, forward_med = _load_split_data(
+        deidentified_dir
+    )
     labels = _build_label(
         label_name, patients, included_ids, forward_cond, forward_enc, forward_med
     )
@@ -208,7 +229,7 @@ def train(label_name: str, version: str) -> Path:
     threshold = optimize_threshold(y_val, y_val_proba, DEFAULT_COST_MATRIX)
 
     metadata = ModelMetadata(
-        version=version,
+        version=label_name,
         label_name=label_name,
         threshold=threshold,
         n_train=len(x_train),
@@ -226,15 +247,30 @@ def train(label_name: str, version: str) -> Path:
         y_val, y_val_proba, threshold, val_data["RACE"], min_n=DEFAULT_MIN_N
     )
 
+    return calibrated, metadata, subgroup_audit, features, patients
+
+
+def train(label_name: str, version: str) -> Path:
+    calibrated, metadata, subgroup_audit, _, _ = fit_and_evaluate(label_name)
+    metadata = ModelMetadata(
+        version=version,
+        label_name=metadata.label_name,
+        threshold=metadata.threshold,
+        n_train=metadata.n_train,
+        n_validation=metadata.n_validation,
+        metrics=metadata.metrics,
+        feature_names=metadata.feature_names,
+    )
+
     registry_dir = Path(get_settings().registry_dir)
     version_dir = save_model_artifact(calibrated, metadata, registry_dir)
     (version_dir / "model_card.md").write_text(generate_model_card(metadata))
     subgroup_audit.to_csv(version_dir / "subgroup_audit.csv", index=False)
 
     print(
-        f"Trained {version} on {label_name}: AUROC={metrics['auroc']:.3f}, "
-        f"ECE={metrics['expected_calibration_error']:.3f}, "
-        f"threshold={threshold:.3f} -> {version_dir}"
+        f"Trained {version} on {label_name}: AUROC={metadata.metrics['auroc']:.3f}, "
+        f"ECE={metadata.metrics['expected_calibration_error']:.3f}, "
+        f"threshold={metadata.threshold:.3f} -> {version_dir}"
     )
     return version_dir
 

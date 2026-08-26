@@ -26,6 +26,8 @@ jobs:
         run: PYTHONPATH=src uv run lint-imports
       - name: Pytest
         run: uv run pytest -v --cov=cohort --cov-report=term-missing
+      - name: Validation harness (ML metric floors + canonical scenarios, gates on regression)
+        run: make validate
 
   docs-build:
     runs-on: ubuntu-latest

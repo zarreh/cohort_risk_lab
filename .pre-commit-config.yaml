@@ -23,5 +23,10 @@ repos:
     hooks:
       - id: check-added-large-files
         args: [--maxkb=1024]
+        # validation/fixtures/: the frozen split for `make validate`'s ML
+        # metric floors (docs/evidence/validation-harness.md) — a real,
+        # seeded, stratified sample of the generated Synthea cohort,
+        # deliberately committed so CI never needs a live Synthea run.
+        exclude: ^validation/fixtures/.*\.parquet$
       - id: end-of-file-fixer
       - id: trailing-whitespace

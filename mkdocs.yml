@@ -78,6 +78,7 @@ nav:
       - Data profile: evidence/data-profile.md
       - Subgroup fairness audit: evidence/fairness-audit.md
       - Label-choice experiment: evidence/label-choice-experiment.md
+      - Validation harness: evidence/validation-harness.md
   - Regulatory basis: regulatory-basis.md
   - Run it yourself: run-it-yourself.md
   - API: api.md

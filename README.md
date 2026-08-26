@@ -21,7 +21,16 @@ enrolment rate diverge by race.
 
 ## Status
 
-**Phase 8 complete — a working full-stack app**, every page verified
+**Phase 9 complete — a PR-CI validation gate**: `make validate` fits both
+models against a committed, real (seeded, stratified-by-race sample of
+the actual generated cohort) frozen split and checks AUROC/calibration
+floors plus the label-choice gap never regresses to zero, then runs four
+hand-authored canonical patients through the real risk-scoring node and
+tools — a care gap that must fire, one that must not, a low-risk patient,
+and one with no data at all. Wired into CI right after pytest. See
+[docs/evidence/validation-harness.md](docs/evidence/validation-harness.md).
+
+**Phase 8: a working full-stack app**, every page verified
 against real backend data (not screenshots of mockups):
 
 - `/queue` — the real 19,409-patient review queue, highest risk first
@@ -44,11 +53,11 @@ Playwright is wired (`frontend-e2e`, `docs-screenshots`) with a real
 browser installed and passing; the homepage screenshot above is captured
 by that same smoke test, per the documentation standard, not hand-taken.
 
-On top of Phase 7's persistent API, Phase 6's agent and D-A12-1
-enforcement, Phase 5's tools and store, Phase 4's label-choice experiment,
-Phase 3's fairness audit, Phase 2's calibrated models, Phase 1's cohort,
-and Phase 0's scaffold. Next: the validation harness (Phase 9) and launch
-docs (Phase 10). See `docs/PLAN.md` for the phase sequence.
+On top of Phase 8's frontend, Phase 7's persistent API, Phase 6's agent and
+D-A12-1 enforcement, Phase 5's tools and store, Phase 4's label-choice
+experiment, Phase 3's fairness audit, Phase 2's calibrated models, Phase
+1's cohort, and Phase 0's scaffold. Next: launch docs (Phase 10). See
+`docs/PLAN.md` for the phase sequence.
 
 This will be a research prototype built entirely on synthetic Synthea data.
 It is **not** a medical device, does not diagnose, and does not screen for

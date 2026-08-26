@@ -26,6 +26,7 @@ models having seen different patients.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Protocol
 
 import numpy as np
 import pandas as pd
@@ -36,26 +37,31 @@ from cohort.pipeline.registry import load_model_artifact
 DEFAULT_SELECTION_QUANTILE = 0.20
 
 
+class _FittedPipeline(Protocol):
+    def predict_proba(self, x: pd.DataFrame) -> np.ndarray: ...
+
+
 def _top_quantile_flag(y_proba: np.ndarray, quantile: float) -> np.ndarray:
     threshold = np.quantile(y_proba, 1 - quantile)
     return np.asarray(y_proba >= threshold)
 
 
-def compare_label_choice(
+def compare_label_choice_pipelines(
     features: pd.DataFrame,
     patients: pd.DataFrame,
-    burden_version_dir: Path,
-    cost_version_dir: Path,
+    burden_pipeline: _FittedPipeline,
+    cost_pipeline: _FittedPipeline,
     selection_quantile: float = DEFAULT_SELECTION_QUANTILE,
 ) -> pd.DataFrame:
     """One row per race in the shared validation split: each model's
     top-`selection_quantile` enrolment rate, and the percentage-point gap
-    between them."""
+    between them. Takes already-fitted pipelines directly — the registry
+    file layout is `compare_label_choice`'s concern, not this function's,
+    so `validation/metric_floors.py` can call this against freshly-fit
+    frozen-split pipelines that were never written to a registry at all.
+    """
     _, val_split = split_train_validation(features, patients)
     x_val = val_split[FEATURE_COLUMNS]
-
-    burden_pipeline, _ = load_model_artifact(burden_version_dir)
-    cost_pipeline, _ = load_model_artifact(cost_version_dir)
 
     burden_proba = burden_pipeline.predict_proba(x_val)[:, 1]
     cost_proba = cost_pipeline.predict_proba(x_val)[:, 1]
@@ -78,3 +84,20 @@ def compare_label_choice(
     ) * 100
 
     return summary.reset_index().sort_values("GAP_PERCENTAGE_POINTS")
+
+
+def compare_label_choice(
+    features: pd.DataFrame,
+    patients: pd.DataFrame,
+    burden_version_dir: Path,
+    cost_version_dir: Path,
+    selection_quantile: float = DEFAULT_SELECTION_QUANTILE,
+) -> pd.DataFrame:
+    """Registry-backed entrypoint — loads both deployed model versions and
+    delegates to `compare_label_choice_pipelines`. This is what
+    `api/deps.py::get_label_choice_comparison` calls."""
+    burden_pipeline, _ = load_model_artifact(burden_version_dir)
+    cost_pipeline, _ = load_model_artifact(cost_version_dir)
+    return compare_label_choice_pipelines(
+        features, patients, burden_pipeline, cost_pipeline, selection_quantile
+    )

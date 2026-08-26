@@ -23,6 +23,14 @@ that is enforced structurally rather than asserted in a prompt.
 
 ## Status
 
+**Phase 9 — a validation harness gating PR CI**: `make validate` fits both
+models against a small, real, committed frozen split (a seeded sample of
+the actual generated cohort, not invented data) and checks that AUROC,
+calibration, and the label-choice enrolment gap all clear regression
+floors, then runs four canonical patient vignettes through the real
+risk-scoring node and tools. See
+[evidence/validation-harness.md](evidence/validation-harness.md).
+
 **Phase 8 — a working full-stack app**, verified against a live backend and
 frontend together, not just unit tests: a real 30,000-patient Synthea
 cohort, two calibrated models reproducing the Obermeyer et al. (2019)
