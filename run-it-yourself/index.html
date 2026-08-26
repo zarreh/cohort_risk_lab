@@ -1137,6 +1137,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run it yourself
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1153,6 +1171,69 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#quick-path-backend-only-using-the-committed-sample" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick path — backend only, using the committed sample
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#full-path-generate-the-cohort-train-and-run-the-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full path — generate the cohort, train, and run the frontend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#regenerating-docs-assets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regenerating docs assets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#regenerating-the-validation-harnesss-frozen-fixture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regenerating the validation harness's frozen fixture
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1205,6 +1286,58 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#quick-path-backend-only-using-the-committed-sample" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick path — backend only, using the committed sample
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#full-path-generate-the-cohort-train-and-run-the-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full path — generate the cohort, train, and run the frontend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#regenerating-docs-assets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regenerating docs assets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#regenerating-the-validation-harnesss-frozen-fixture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regenerating the validation harness's frozen fixture
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1229,13 +1362,50 @@
 
 
 <h1 id="run-it-yourself">Run it yourself<a class="headerlink" href="#run-it-yourself" title="Permanent link">¶</a></h1>
+<h2 id="quick-path-backend-only-using-the-committed-sample">Quick path — backend only, using the committed sample<a class="headerlink" href="#quick-path-backend-only-using-the-committed-sample" title="Permanent link">¶</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>dev
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env<span class="w">   </span><span class="c1"># fill in your own OpenAI API key</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>make<span class="w"> </span><span class="nb">test</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>make<span class="w"> </span>dev<span class="w">               </span><span class="c1"># http://localhost:8000/healthz</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env<span class="w">   </span><span class="c1"># OpenAI key optional — only the evidence agent's LLM nodes need it</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>make<span class="w"> </span><span class="nb">test</span><span class="w">              </span><span class="c1"># 120 tests, no external data required</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>make<span class="w"> </span>validate<span class="w">          </span><span class="c1"># ML metric floors + canonical brief scenarios, against committed fixtures</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>make<span class="w"> </span>dev<span class="w">               </span><span class="c1"># http://localhost:8000/healthz</span>
 </code></pre></div>
-<p>Full quickstart (data generation, training, frontend) is written as each
-phase lands.</p>
+<p>This gets you a green test suite and a running API server without
+generating any data. The API's data-backed routes (<code>/queue</code>,
+<code>/evidence/*</code>) need the full pipeline below.</p>
+<h2 id="full-path-generate-the-cohort-train-and-run-the-frontend">Full path — generate the cohort, train, and run the frontend<a class="headerlink" href="#full-path-generate-the-cohort-train-and-run-the-frontend" title="Permanent link">¶</a></h2>
+<p>Requires a JDK 17+ (Synthea needs one; <code>data/generate_synthea.py</code> prints
+an install command if none is found — no root required) and roughly
+10-15 minutes, most of it Synthea generating ~30,000 patients.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>make<span class="w"> </span>data<span class="w">    </span><span class="c1"># generate_synthea -&gt; deidentify -&gt; build_cohort -&gt; inject_access_gap -&gt; build_cohort_store</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>make<span class="w"> </span>train<span class="w">   </span><span class="c1"># trains v1_burden and v1_cost, populates the review queue</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>make<span class="w"> </span>dev<span class="w">             </span><span class="c1"># http://localhost:8000/healthz</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>make<span class="w"> </span>frontend-dev<span class="w">    </span><span class="c1"># http://localhost:3000, in a second terminal</span>
+</code></pre></div>
+<p>Then, with an OpenAI key in <code>.env</code>:</p>
+<ol>
+<li>Open <code>http://localhost:3000/queue</code> — the real review queue, highest
+   risk first.</li>
+<li>Open any patient — <strong>Start Review</strong> streams the evidence agent's
+   trace live over SSE, ending at a drafted case brief and a decision
+   form (enroll / decline / defer).</li>
+<li>Open <code>/evidence/fairness</code> — the per-stratum audit for the deployed
+   model.</li>
+<li>Open <code>/evidence/label-choice</code> — the label-choice divergence chart.</li>
+</ol>
+<p>Without an OpenAI key, everything up to <strong>Start Review</strong> still works —
+the queue, case detail, and both evidence pages all render real data from
+the trained models. Starting a review will fail at the point it needs to
+call the LLM; this is expected and disclosed on the case page.</p>
+<h2 id="regenerating-docs-assets">Regenerating docs assets<a class="headerlink" href="#regenerating-docs-assets" title="Permanent link">¶</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>make<span class="w"> </span>docs-assets<span class="w">       </span><span class="c1"># regenerates docs/evidence/assets/*.svg from the trained models</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>make<span class="w"> </span>docs-screenshots<span class="w">  </span><span class="c1"># re-captures docs/assets/homepage-screenshot.png via Playwright</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>make<span class="w"> </span>docs<span class="w">              </span><span class="c1"># serves the MkDocs site locally</span>
+</code></pre></div>
+<h2 id="regenerating-the-validation-harnesss-frozen-fixture">Regenerating the validation harness's frozen fixture<a class="headerlink" href="#regenerating-the-validation-harnesss-frozen-fixture" title="Permanent link">¶</a></h2>
+<p>Only needed if you want to re-seed it (e.g. after a new <code>make data</code> run
+with a different Synthea seed) — this is not part of <code>make data</code> or CI:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">PYTHONPATH</span><span class="o">=</span>.<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>validation.fixtures.build_frozen_fixture
+</code></pre></div>
 
 
 

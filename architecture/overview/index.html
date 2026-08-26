@@ -614,6 +614,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -630,6 +648,80 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#why-two-halves-not-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why two halves, not one
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layering-enforced-by-import-linter-5-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layering (enforced by import-linter, 5 contracts)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-case-review-graph-one-node-at-a-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The case-review graph, one node at a time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Persistence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1213,6 +1305,69 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#why-two-halves-not-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why two halves, not one
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layering-enforced-by-import-linter-5-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layering (enforced by import-linter, 5 contracts)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-case-review-graph-one-node-at-a-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The case-review graph, one node at a time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Persistence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1237,8 +1392,106 @@
 
 
 <h1 id="architecture-overview">Architecture overview<a class="headerlink" href="#architecture-overview" title="Permanent link">¶</a></h1>
-<p><em>(Written once the pipeline and graph halves exist — Phases 2 and 6.
-Placeholder during the template-shakedown phase.)</em></p>
+<p>A12 carries both halves of the portfolio's app template at once, and that
+duality is the app's thesis, not a layout compromise: <strong>the model
+decides, the agent explains.</strong></p>
+<pre class="mermaid"><code>flowchart LR
+    subgraph "Track B — pipeline/ (no LLM, ever — D-A12-1)"
+        DATA[Synthea cohort\nde-identified] --&gt; SPLIT[splits.py\nlookback / forward window]
+        SPLIT --&gt; FEAT[features/\nleakage-safe]
+        SPLIT --&gt; LABEL[labels/\nY_BURDEN · Y_COST]
+        FEAT --&gt; TRAIN[models/train.py\ncalibrated HistGBM]
+        LABEL --&gt; TRAIN
+        TRAIN --&gt; AUDIT[fairness/\nper-stratum, Wilson CI]
+        TRAIN --&gt; REG[(registry/\nversioned artefact)]
+    end
+
+    subgraph "Track A — graph/ (LangGraph case review)"
+        LOAD[load_case\nmodel score + SHAP drivers] --&gt; EVID[assemble_evidence\nevidence agent + tools]
+        EVID &lt;--&gt; TOOLS[tools/\nread-only, PHI-projected]
+        EVID --&gt; DRAFT[draft_brief\nbrief writer]
+        DRAFT --&gt; VERIFY[verify_brief\ngrounding loop]
+        VERIFY -- ungrounded --&gt; EVID
+        VERIFY --&gt; AWAIT["await_decision\ninterrupt()"]
+        AWAIT --&gt; RECORD[record_decision]
+    end
+
+    REG --&gt; LOAD
+    TOOLS --&gt; STORE[(cohort_store.db\nread-only)]</code></pre>
+<h2 id="why-two-halves-not-one">Why two halves, not one<a class="headerlink" href="#why-two-halves-not-one" title="Permanent link">¶</a></h2>
+<p>Every number a clinician could act on without a human in the loop —
+the risk score, the risk tier, the fairness audit — comes out of <code>pipeline/</code>,
+which contains no LangChain or LangGraph import at all (enforced by an
+import-linter contract, not just a convention). The LLM never sees the
+raw model output before a person does; it only ever explains a score
+<code>graph/nodes/load_case.py</code> already computed. This is
+<a href="../decisions/D-A12-1-llm-is-not-the-risk-model/">D-A12-1</a>, and it's why
+the repo is laid out this way rather than as one monolithic <code>agent/</code>
+package with a model call buried inside a tool.</p>
+<h2 id="layering-enforced-by-import-linter-5-contracts">Layering (enforced by import-linter, 5 contracts)<a class="headerlink" href="#layering-enforced-by-import-linter-5-contracts" title="Permanent link">¶</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>api  →  graph  →  {tools, guardrails}  →  pipeline  →  schemas / settings
+</code></pre></div>
+<ul>
+<li><strong><code>api/</code></strong> — FastAPI routes, SSE streaming, the queue/decision stores.
+  Never imported by anything below it.</li>
+<li><strong><code>graph/</code></strong> — the case-review <code>StateGraph</code>: <code>nodes/</code> (deterministic and
+  LLM-backed steps), <code>chains/</code> (LLM calls with structured output),
+  <code>agents/</code> (the tool-calling evidence agent). <code>chains/</code> may never import
+  <code>nodes/</code> — a chain is a stateless function of its input, not a step
+  that reaches into graph state.</li>
+<li><strong><code>tools/</code></strong> — five read-only <code>StructuredTool</code>s the evidence agent can
+  call, each behind <code>guardrails/phi_projection.py</code>'s field allowlist.
+  <code>tools/</code> may never import <code>graph/</code>: a tool is a leaf, not a participant
+  in control flow.</li>
+<li><strong><code>pipeline/</code></strong> — the model half: <code>splits/</code>, <code>features/</code>, <code>labels/</code>,
+  <code>models/</code>, <code>calibration/</code>, <code>thresholds/</code>, <code>fairness/</code>, <code>explain/</code>,
+  <code>cards/</code>, <code>registry.py</code>. No LangChain or LangGraph import may appear
+  anywhere in this package.</li>
+<li><strong><code>schemas/</code> and <code>settings.py</code></strong> — typed contracts (<code>CaseBrief</code>,
+  <code>Driver</code>, ...) and configuration. Depended on by everything, depend on
+  nothing above them.</li>
+</ul>
+<h2 id="the-case-review-graph-one-node-at-a-time">The case-review graph, one node at a time<a class="headerlink" href="#the-case-review-graph-one-node-at-a-time" title="Permanent link">¶</a></h2>
+<ol>
+<li><strong><code>load_case</code></strong> — deterministic, not an agent step ("don't spend an
+   LLM call on a decision an <code>if</code> can make"). Scores the patient against
+   the deployed calibrated model, sets <code>risk_score</code> and <code>risk_tier</code>, and
+   attaches SHAP feature attribution as <code>drivers</code> — all before any LLM
+   node runs.</li>
+<li><strong><code>assemble_evidence</code> ⇄ <code>tools</code></strong> — a tool-calling evidence agent
+   gathers corroborating encounters, labs, care gaps, and missing-data
+   flags. Every tool is read-only and PHI-projected.</li>
+<li><strong><code>draft_brief</code></strong> — a structured-output chain writes <code>CaseBrief</code>.
+   <code>narrative</code> is its only free-text field; there is no field anywhere in
+   the schema for a risk tier or a decision.</li>
+<li><strong><code>verify_brief</code></strong> — the grounding loop: each claim in the brief is
+   checked against the recorded tool results. An ungrounded brief routes
+   back to <code>assemble_evidence</code> for another pass (capped by
+   <code>MAX_REVISIONS</code>), never silently rewritten.</li>
+<li><strong><code>await_decision</code></strong> — a real LangGraph <code>interrupt()</code>. The graph
+   pauses here; nothing past this point runs without a human decision.</li>
+<li><strong><code>record_decision</code></strong> — persists the clinician's enrol/decline/defer
+   call and any override notes.</li>
+</ol>
+<h2 id="persistence">Persistence<a class="headerlink" href="#persistence" title="Permanent link">¶</a></h2>
+<p>Three separate SQLite stores, each with one job:</p>
+<ul>
+<li><strong><code>cohort.db</code></strong> (<code>CohortStore</code>) — read-only, built once by
+  <code>data/build_cohort_store.py</code>. The pipeline never reads it; it exists
+  only for the tool layer.</li>
+<li><strong><code>queue.db</code></strong> (<code>QueueStore</code>) — read-write. The clinician review queue,
+  decisions, and the SSE event log the frontend streams from.</li>
+<li><strong><code>checkpoints.db</code></strong> — the LangGraph checkpointer (<code>AsyncSqliteSaver</code>),
+  so an <code>interrupt()</code>ed case-review run survives a server restart.</li>
+</ul>
+<h2 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">¶</a></h2>
+<p>Two more layers gate correctness beyond unit tests:
+<code>tests/graph/test_case_review_integration.py</code> proves the graph's control
+flow — including a real <code>interrupt()</code>/resume cycle — with fake LLM
+stand-ins; <code>make validate</code> (see
+<a href="../../evidence/validation-harness/">evidence/validation-harness.md</a>) gates
+PR CI on ML metric floors over a frozen data split and four canonical
+brief scenarios run against the real, non-LLM parts of the graph.</p>
 
 
 

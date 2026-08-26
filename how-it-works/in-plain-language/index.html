@@ -521,6 +521,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In plain language
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -537,6 +555,58 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#the-five-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-one-finding-this-app-exists-to-demonstrate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The one finding this app exists to demonstrate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-app-is-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this app is not
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1210,6 +1280,47 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#the-five-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-one-finding-this-app-exists-to-demonstrate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The one finding this app exists to demonstrate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-app-is-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this app is not
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1234,8 +1345,68 @@
 
 
 <h1 id="in-plain-language">In plain language<a class="headerlink" href="#in-plain-language" title="Permanent link">¶</a></h1>
-<p><em>(Written once the case-review flow exists — Phase 6. Placeholder during the
-template-shakedown phase.)</em></p>
+<p>This app takes a synthetic hospital's worth of patients, uses a
+statistical model — not a language model — to flag who might benefit from
+a care-management programme, checks whether that model is fair across
+race, sex, and age before anyone acts on it, and then has a separate AI
+assistant gather the evidence a clinician would want to see. It never
+makes the call itself — a person always does.</p>
+<h2 id="the-five-steps">The five steps<a class="headerlink" href="#the-five-steps" title="Permanent link">¶</a></h2>
+<p><strong>1. A statistical model scores every patient.</strong> Not the AI assistant —
+a calibrated machine-learning model trained on each patient's history of
+diagnoses, encounters, and medications. It never sees a patient's race or
+ethnicity. It outputs a number between 0 and 1: how likely this patient is
+to have high illness burden in the next six months.</p>
+<p><strong>2. The score gets checked for fairness before anyone sees it.</strong> A
+single overall accuracy number can hide a model that works well for most
+patients and poorly for a few. This app reports accuracy separately for
+every demographic group — age, sex, race, insurance type — and shows the
+uncertainty range on each number. A group with too few patients to say
+anything reliable is labeled "insufficient data," never given a
+misleadingly precise number just to fill in a table.</p>
+<p><strong>3. Flagged patients go into a review queue.</strong> Anyone the model scores
+above a threshold — chosen to balance "we missed someone who needed help"
+against "we spent time on someone who didn't" — lands in a queue for a
+clinician to review, highest risk first.</p>
+<p><strong>4. An AI assistant gathers the evidence, but never decides.</strong> When a
+clinician opens a case, a second AI system — separate from the risk model
+— pulls together <em>why</em> the model flagged this patient: which factors drove
+the score, what the patient's recent encounters and lab results show, and
+whether anything looks missing. This assistant is not allowed to say
+whether the patient should be enrolled. That's not a suggestion in its
+instructions — the form it fills out has no box to check for a
+recommendation, and everything it writes is automatically scanned for
+words like "should be enrolled" or "recommend," which would cause it to
+be sent back to gather more evidence and try again.</p>
+<p><strong>5. A person makes the call.</strong> The clinician reads the evidence and
+decides: enroll, decline, or defer for more information. That decision,
+and any notes explaining it, is saved.</p>
+<h2 id="the-one-finding-this-app-exists-to-demonstrate">The one finding this app exists to demonstrate<a class="headerlink" href="#the-one-finding-this-app-exists-to-demonstrate" title="Permanent link">¶</a></h2>
+<p>In 2019, researchers found that a real, widely-used healthcare algorithm
+had been trained to predict <em>how much a patient would cost</em> the health
+system — a reasonable-sounding proxy for "how sick is this patient."
+The problem: Black patients, at the <em>same</em> level of underlying illness,
+have historically had less access to care and so cost the system less —
+not because they were healthier, but because they got treated less. A
+model trained on cost quietly learned to substitute "cost less" for
+"less sick," and under-flagged Black patients who needed help just as
+much as anyone else.</p>
+<p>This app rebuilds that comparison on its synthetic data: the same model,
+trained once on illness burden and once on cost, then checked for whether
+each version flags different patients by race. Because the synthetic data
+generator doesn't naturally include unequal access to care, this app adds
+it deliberately — a disclosed, published adjustment, not a hidden bug —
+specifically so the comparison has something real to catch. Every page
+that shows the result says so plainly. The point being demonstrated is
+that checking a model's fairness <em>per group, not on average</em> is what
+catches this kind of problem — not that this app discovered a new one.</p>
+<h2 id="what-this-app-is-not">What this app is not<a class="headerlink" href="#what-this-app-is-not" title="Permanent link">¶</a></h2>
+<p>It is not a medical device. It does not diagnose anyone or screen for a
+disease it hasn't already been told the patient has. It runs entirely on
+synthetic patients generated by an open-source simulator — no real
+patient's data was ever used to build or test it. See
+<a href="../../regulatory-basis/">regulatory-basis.md</a> for the full basis behind
+each of those claims.</p>
 
 
 
