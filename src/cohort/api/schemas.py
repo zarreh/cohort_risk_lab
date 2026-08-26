@@ -34,3 +34,25 @@ class CaseDetailResponse(BaseModel):
     decision: str | None
     override_notes: str | None
     decided_at: str | None
+
+
+class SubgroupAuditRow(BaseModel):
+    stratum: str
+    n: int
+    sufficient_n: bool
+    calibration_in_the_large: float | None
+    expected_calibration_error: float | None
+    tpr: float | None
+    tpr_ci_lower: float | None
+    tpr_ci_upper: float | None
+    enrolment_rate: float | None
+    enrolment_rate_ci_lower: float | None
+    enrolment_rate_ci_upper: float | None
+
+
+class LabelChoiceRow(BaseModel):
+    race: str
+    n: int
+    burden_enrolment_rate: float
+    cost_enrolment_rate: float
+    gap_percentage_points: float

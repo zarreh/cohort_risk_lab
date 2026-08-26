@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     rate_limit_per_minute: int = 20
     max_request_body_bytes: int = 16_384
+    frontend_origins: list[str] = ["http://localhost:3000"]
 
 
 @lru_cache

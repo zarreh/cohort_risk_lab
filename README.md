@@ -17,41 +17,38 @@ reproduces the **Obermeyer et al. (Science, 2019)** label-choice failure:
 training the same model on *cost* versus *illness burden* and showing the
 enrolment rate diverge by race.
 
+![Homepage](docs/assets/homepage-screenshot.png)
+
 ## Status
 
-**Phase 7 complete — a working FastAPI app with persistence,
-server-sent-event streaming, and a real SQLite-backed langgraph
-checkpointer**, verified end to end against the live HTTP API (not just
-unit tests):
+**Phase 8 complete — a working full-stack app**, every page verified
+against real backend data (not screenshots of mockups):
 
-```
-curl localhost:8000/queue?status=pending   # 19,409 real flagged patients
-curl localhost:8000/queue/{patient_id}      # a real case detail
-curl -X POST localhost:8000/queue/{id}/start  # fails exactly at the OpenAI
-                                               # credential check — confirmed
-                                               # via the actual server log
-```
+- `/queue` — the real 19,409-patient review queue, highest risk first
+- `/queue/[patientId]` — real case detail, a Start Review button, an
+  SSE-driven trace timeline, and the decision form (interrupt/resume via
+  the real backend — see Phase 7)
+- `/evidence/fairness` — the real subgroup audit table, insufficient-n
+  strata rendered as such rather than a misleading number
+- `/evidence/label-choice` — the real label-choice divergence chart
+  (recharts), narrating the exact -5.7pp Black-patient gap from Phase 4
 
-`store/queue_store.py` persists every review case and its node-by-node
-events — the same replay-from-store discipline A2's `run_store.py` uses,
-adapted for a graph that pauses at `interrupt()` instead of running to
-completion in one pass (`api/run_executor.py`'s `start_review` stops the
-moment the graph interrupts; `resume_review` is the separate entrypoint a
-clinician's decision continues). `api/main.py`'s lifespan opens a real
-`AsyncSqliteSaver` at startup, so an interrupted review survives a server
-restart, not just an in-process pause.
+Verified by starting both servers and reading the actual rendered HTML —
+`19,409 pending cases`, `Risk score 1.000`, real per-stratum TPR
+percentages, the real -5.7pp gap narrative — not by inspecting component
+code in isolation. `CORSMiddleware` (configurable allowed origins, not
+`*`) was a real, necessary addition once the browser started making
+cross-origin calls from the Next.js dev server to the API.
 
-`data/populate_queue.py` batch-scores the whole cohort with the deployed
-model and enqueues everyone above threshold — separated from the
-interactive API so starting the server never blocks on rescoring 30,000+
-patients. Also caught a real bug in passing: `tests/api/` route tests
-proved 404/409/422 error paths work correctly before ever touching a live
-graph.
+Playwright is wired (`frontend-e2e`, `docs-screenshots`) with a real
+browser installed and passing; the homepage screenshot above is captured
+by that same smoke test, per the documentation standard, not hand-taken.
 
-On top of Phase 6's agent and D-A12-1 enforcement, Phase 5's tools and
-store, Phase 4's label-choice experiment, Phase 3's fairness audit, Phase
-2's calibrated models, Phase 1's cohort, and Phase 0's scaffold. Next: the
-Next.js frontend (Phase 8). See `docs/PLAN.md` for the phase sequence.
+On top of Phase 7's persistent API, Phase 6's agent and D-A12-1
+enforcement, Phase 5's tools and store, Phase 4's label-choice experiment,
+Phase 3's fairness audit, Phase 2's calibrated models, Phase 1's cohort,
+and Phase 0's scaffold. Next: the validation harness (Phase 9) and launch
+docs (Phase 10). See `docs/PLAN.md` for the phase sequence.
 
 This will be a research prototype built entirely on synthetic Synthea data.
 It is **not** a medical device, does not diagnose, and does not screen for

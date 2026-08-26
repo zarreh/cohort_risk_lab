@@ -57,4 +57,4 @@ frontend-types:
 	cd frontend && npm run gen:types
 
 frontend-e2e:
-	cd frontend && npx playwright test review.spec.ts
+	cd frontend && npx playwright test

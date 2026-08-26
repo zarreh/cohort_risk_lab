@@ -52,6 +52,37 @@ def get_feature_table() -> pd.DataFrame:
     return features
 
 
+COST_MODEL_VERSION = "v1_cost"
+
+
+@lru_cache
+def get_subgroup_audit(version: str) -> pd.DataFrame:
+    """Reads the subgroup audit `make train` wrote next to the given
+    model version — computed once, on the held-out validation set, at
+    training time (`pipeline/fairness/subgroup_audit.py`). The API never
+    recomputes it: recomputing per request would mean re-scoring the
+    validation set on every page load for a number that only changes when
+    the model is retrained."""
+    path = Path(get_settings().registry_dir) / version / "subgroup_audit.csv"
+    return pd.read_csv(path)
+
+
+@lru_cache
+def get_label_choice_comparison() -> pd.DataFrame:
+    """Computed once per process: the label-choice experiment's divergence
+    table (`pipeline/models/compare_labels.py`), comparing the deployed
+    burden model against the cost model on the identical validation split."""
+    from cohort.pipeline.models.compare_labels import compare_label_choice
+
+    patients, features = build_scored_feature_table()
+    return compare_label_choice(
+        features,
+        patients,
+        Path(get_settings().registry_dir) / DEPLOYED_MODEL_VERSION,
+        Path(get_settings().registry_dir) / COST_MODEL_VERSION,
+    )
+
+
 def get_case_review_graph(request: Request) -> CaseReviewGraph:
     """One compiled graph per process, built lazily on first request and
     cached on `app.state` — not `@lru_cache`, because it needs the
