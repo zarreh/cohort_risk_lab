@@ -21,7 +21,19 @@ enrolment rate diverge by race.
 
 ## Status
 
-**Phase 9 complete — a PR-CI validation gate**: `make validate` fits both
+**All 10 phases complete.** Phase 10 closed out the documentation this
+plan deferred until the model, audit, and agent existed to write
+honestly about: [docs/regulatory-basis.md](docs/regulatory-basis.md) (HIPAA
+minimum-necessary and Safe Harbor, the FDA Non-Device CDS criteria this
+app's design tracks, NCQA/HEDIS enrolment framing, and the Obermeyer et
+al. reproduction), [docs/architecture/overview.md](docs/architecture/overview.md)
+(the pipeline/graph split and the five-node case-review flow, with a
+diagram), and [docs/how-it-works/in-plain-language.md](docs/how-it-works/in-plain-language.md)
+(a non-engineer walkthrough) — all three were still Phase-0 placeholders
+until now. `docs/run-it-yourself.md` got a real, tested quickstart
+(sample-data path and full-pipeline path) to replace its own stub.
+
+**Phase 9 — a PR-CI validation gate**: `make validate` fits both
 models against a committed, real (seeded, stratified-by-race sample of
 the actual generated cohort) frozen split and checks AUROC/calibration
 floors plus the label-choice gap never regresses to zero, then runs four
@@ -53,15 +65,15 @@ Playwright is wired (`frontend-e2e`, `docs-screenshots`) with a real
 browser installed and passing; the homepage screenshot above is captured
 by that same smoke test, per the documentation standard, not hand-taken.
 
-On top of Phase 8's frontend, Phase 7's persistent API, Phase 6's agent and
-D-A12-1 enforcement, Phase 5's tools and store, Phase 4's label-choice
-experiment, Phase 3's fairness audit, Phase 2's calibrated models, Phase
-1's cohort, and Phase 0's scaffold. Next: launch docs (Phase 10). See
-`docs/PLAN.md` for the phase sequence.
+Built in order: scaffold (0), cohort (1), calibrated models (2), fairness
+audit (3), label-choice experiment (4), tools and store (5), agent and
+D-A12-1 enforcement (6), persistent API (7), frontend (8), validation
+harness (9), and this documentation pass (10). See `docs/PLAN.md` for the
+full phase sequence.
 
 This will be a research prototype built entirely on synthetic Synthea data.
 It is **not** a medical device, does not diagnose, and does not screen for
-disease — see `docs/regulatory-basis.md` once it exists.
+disease — see [docs/regulatory-basis.md](docs/regulatory-basis.md).
 
 ## Running it
 

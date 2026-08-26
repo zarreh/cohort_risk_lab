@@ -23,6 +23,12 @@ that is enforced structurally rather than asserted in a prompt.
 
 ## Status
 
+**All 10 phases complete.** This page, [architecture/overview.md](architecture/overview.md),
+[how-it-works/in-plain-language.md](how-it-works/in-plain-language.md), and
+[regulatory-basis.md](regulatory-basis.md) were finished in Phase 10 —
+each was a placeholder deferred until the model, the audit, and the agent
+existed to write honestly about.
+
 **Phase 9 — a validation harness gating PR CI**: `make validate` fits both
 models against a small, real, committed frozen split (a seeded sample of
 the actual generated cohort, not invented data) and checks that AUROC,
