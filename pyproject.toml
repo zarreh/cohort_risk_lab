@@ -23,6 +23,7 @@ dependencies = [
     "scipy>=1.13",
     "shap>=0.46",
     "httpx>=0.27",
+    "zarreh-agentkit",
 ]
 
 [project.optional-dependencies]
@@ -116,3 +117,6 @@ name = "no DSPy or DeepEval outside validation/optimize"
 type = "forbidden"
 source_modules = ["cohort"]
 forbidden_modules = ["dspy", "deepeval"]
+
+[tool.uv.sources]
+zarreh-agentkit = { path = "../zarreh_agentkit", editable = true }

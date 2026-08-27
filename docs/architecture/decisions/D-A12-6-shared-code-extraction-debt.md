@@ -41,3 +41,23 @@ consumer later, at which point extraction is warranted by the same rule.
 - Nothing about A12's own correctness depends on the debt being paid down;
   it is purely a portfolio-wide maintenance cost, tracked here rather than
   hidden.
+
+## Update (2026-08-27) — the backend half is paid down
+
+A3 (`clinical_care_navigator`) became the third repo. `zarreh-agentkit`
+v0.2.0 now carries `settings`, `observability` (incl. `build_tracing_callbacks`,
+independently reimplemented identically in A2/A3/A12), `api.middleware`,
+`api.rate_limit`, `guardrails.budget`, `guardrails.projection`, and an
+`evals` runner shell. A12's `settings.py`, `observability.py`,
+`api/middleware.py`, `api/rate_limit.py`, and `run_executor.py`'s tracing
+callback now wrap the kit instead of duplicating it; `guardrails/phi_projection.py`
+wraps `zarreh_agentkit.guardrails.projection.project_fields`, keeping only
+its own `TOOL_FIELD_ALLOWLIST` local. Verified: `make lint`/`typecheck`/`imports`/`test`
+(120/120) and `make validate` (18/18) all green afterward.
+
+Still local by design, not debt: `src/cohort/pipeline/` (the ML half — still
+the only instance of the proto-`zarreh-mlkit`/X4 shape; A8 is its second
+consumer) and `validation/` (the Track-B-style harness, a different shape
+from the agentic `evals` runner). The docs/CI/frontend duplication this ADR
+also named is unaffected by this update — MkDocs/CI extraction is X5's
+concern, not X2's.

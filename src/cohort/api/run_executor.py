@@ -11,10 +11,10 @@ from __future__ import annotations
 import json
 
 import structlog
-from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
 from pydantic import BaseModel
+from zarreh_agentkit.observability import build_tracing_callbacks
 
 from cohort.graph.builder import CaseReviewGraph
 from cohort.graph.state import CaseReviewState, create_initial_case_review_state
@@ -43,14 +43,6 @@ def _json_default(value: object) -> object:
     return str(value)
 
 
-def _build_tracing_callbacks(settings: Settings) -> list[BaseCallbackHandler]:
-    if not settings.langsmith_api_key:
-        return []
-    from langchain_core.tracers.langchain import LangChainTracer
-
-    return [LangChainTracer(project_name=settings.langsmith_project)]
-
-
 async def _stream_and_persist(
     graph: CaseReviewGraph,
     stream_input: CaseReviewState | Command[object],
@@ -61,7 +53,7 @@ async def _stream_and_persist(
 ) -> int:
     """Shared streaming loop for both starting and resuming a review.
     Returns the next unused event sequence number."""
-    callbacks = _build_tracing_callbacks(settings)
+    callbacks = build_tracing_callbacks(settings.langsmith_api_key, settings.langsmith_project)
     config = RunnableConfig(
         configurable={"thread_id": patient_id},
         callbacks=callbacks,

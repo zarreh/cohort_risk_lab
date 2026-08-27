@@ -11,6 +11,10 @@ prompt to "only mention clinically relevant fields" can be talked out of
 that by a sufficiently adversarial or confused conversation; a field that
 was never serialised into the tool's output cannot leak, regardless of
 what the model is told or asked.
+
+The allowlist mechanism itself is `zarreh_agentkit.guardrails.projection`
+(a second occurrence, alongside A3's own state-projection pattern); this
+module owns only the per-tool allowlist, which is domain-specific.
 """
 
 from __future__ import annotations
@@ -18,6 +22,7 @@ from __future__ import annotations
 from typing import Any
 
 from pydantic import BaseModel
+from zarreh_agentkit.guardrails.projection import project_fields
 
 # tool name -> allowed field names on that tool's return model. A field not
 # listed here is dropped by `project()`, never passed through by default.
@@ -40,6 +45,4 @@ def project(record: BaseModel, tool_name: str) -> dict[str, Any]:
             f"No PHI projection allowlist registered for tool {tool_name!r}. "
             "Add one to TOOL_FIELD_ALLOWLIST before this tool can return data."
         )
-    allowed = TOOL_FIELD_ALLOWLIST[tool_name]
-    full = record.model_dump(mode="json")
-    return {key: value for key, value in full.items() if key in allowed}
+    return project_fields(record, TOOL_FIELD_ALLOWLIST[tool_name])
