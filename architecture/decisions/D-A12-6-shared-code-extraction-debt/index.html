@@ -951,6 +951,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#update-2026-08-27-the-backend-half-is-paid-down" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Update (2026-08-27) — the backend half is paid down
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1324,6 +1335,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#update-2026-08-27-the-backend-half-is-paid-down" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Update (2026-08-27) — the backend half is paid down
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1388,6 +1410,23 @@ consumer later, at which point extraction is warranted by the same rule.</p>
   it is purely a portfolio-wide maintenance cost, tracked here rather than
   hidden.</li>
 </ul>
+<h2 id="update-2026-08-27-the-backend-half-is-paid-down">Update (2026-08-27) — the backend half is paid down<a class="headerlink" href="#update-2026-08-27-the-backend-half-is-paid-down" title="Permanent link">¶</a></h2>
+<p>A3 (<code>clinical_care_navigator</code>) became the third repo. <code>zarreh-agentkit</code>
+v0.2.0 now carries <code>settings</code>, <code>observability</code> (incl. <code>build_tracing_callbacks</code>,
+independently reimplemented identically in A2/A3/A12), <code>api.middleware</code>,
+<code>api.rate_limit</code>, <code>guardrails.budget</code>, <code>guardrails.projection</code>, and an
+<code>evals</code> runner shell. A12's <code>settings.py</code>, <code>observability.py</code>,
+<code>api/middleware.py</code>, <code>api/rate_limit.py</code>, and <code>run_executor.py</code>'s tracing
+callback now wrap the kit instead of duplicating it; <code>guardrails/phi_projection.py</code>
+wraps <code>zarreh_agentkit.guardrails.projection.project_fields</code>, keeping only
+its own <code>TOOL_FIELD_ALLOWLIST</code> local. Verified: <code>make lint</code>/<code>typecheck</code>/<code>imports</code>/<code>test</code>
+(120/120) and <code>make validate</code> (18/18) all green afterward.</p>
+<p>Still local by design, not debt: <code>src/cohort/pipeline/</code> (the ML half — still
+the only instance of the proto-<code>zarreh-mlkit</code>/X4 shape; A8 is its second
+consumer) and <code>validation/</code> (the Track-B-style harness, a different shape
+from the agentic <code>evals</code> runner). The docs/CI/frontend duplication this ADR
+also named is unaffected by this update — MkDocs/CI extraction is X5's
+concern, not X2's.</p>
 
 
 
