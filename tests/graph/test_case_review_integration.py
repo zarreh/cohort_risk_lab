@@ -106,14 +106,16 @@ def _build_test_graph(model_version_dir: Path, feature_table: pd.DataFrame, stor
     brief_writer = _FakeBriefWriter()
 
     workflow = StateGraph(CaseReviewState)
-    workflow.add_node(  # type: ignore[call-overload]
-        "load_case", build_load_case_node(model_version_dir, feature_table)
+    workflow.add_node(
+        "load_case",
+        build_load_case_node(model_version_dir, feature_table),  # type: ignore[arg-type]
     )
-    workflow.add_node(  # type: ignore[call-overload]
-        "assemble_evidence", build_assemble_evidence_node(evidence_agent, "system prompt")
+    workflow.add_node(
+        "assemble_evidence",
+        build_assemble_evidence_node(evidence_agent, "system prompt"),  # type: ignore[arg-type]
     )
     workflow.add_node("tools", ToolNode(tools))
-    workflow.add_node("draft_brief", build_draft_brief_node(brief_writer))  # type: ignore[call-overload]
+    workflow.add_node("draft_brief", build_draft_brief_node(brief_writer))  # type: ignore[arg-type]
     workflow.add_node("verify_brief", verify_brief_node)
     workflow.add_node("await_decision", await_decision_node)
     workflow.add_node("record_decision", record_decision_node)
