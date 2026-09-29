@@ -14,11 +14,10 @@ import structlog
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
 from pydantic import BaseModel
-from zarreh_agentkit.observability import build_tracing_callbacks
 
 from cohort.graph.builder import CaseReviewGraph
 from cohort.graph.state import CaseReviewState, create_initial_case_review_state
-from cohort.observability import get_logger
+from cohort.observability import build_tracing_callbacks, get_logger
 from cohort.settings import Settings
 from cohort.store.queue_store import QueueStore
 

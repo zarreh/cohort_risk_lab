@@ -6,6 +6,8 @@ reference/
 data/raw/
 data/synthea/
 data/*.db
+data/*.db-shm
+data/*.db-wal
 data/*.tsv
 data/*.zip
 data/*.jar

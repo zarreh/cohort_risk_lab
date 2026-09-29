@@ -11,6 +11,9 @@ class Settings(AgentSettings):
 
     offline_mode: bool = False
 
+    # The UI shares one client IP (Next.js server + browser); 20/min tripped on normal use.
+    rate_limit_per_minute: int = 120
+
     langsmith_project: str = "cohort-risk-lab"
 
     cohort_db_path: str = "data/cohort.db"

@@ -31,7 +31,7 @@ export function LabelChoiceChart({ rows }: { rows: LabelChoiceRow[] }) {
       </p>
       <div className="h-80 w-full overflow-x-auto">
       <ResponsiveContainer width="100%" height="100%" minWidth={480}>
-        <BarChart data={data} layout="vertical" margin={{ left: 24, right: 24 }}>
+        <BarChart data={data} layout="vertical" margin={{ left: 24, right: 24, bottom: 24 }}>
           <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
           <XAxis
             type="number"

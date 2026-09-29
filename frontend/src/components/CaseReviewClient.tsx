@@ -7,6 +7,17 @@ import type { CaseBrief, CaseDetail, ReviewEventPayload } from "@/lib/types";
 
 const ACTIVE_STATUSES = new Set(["in_review"]);
 
+const STEP_LABELS: Record<string, string> = {
+  load_case: "Scoring the patient with the risk model",
+  assemble_evidence: "Agent is deciding what evidence to gather",
+  tools: "Fetching patient encounters, labs and care gaps",
+  draft_brief: "Drafting the case brief",
+  verify_brief: "Checking the brief against the evidence",
+  await_decision: "Ready for the clinician",
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function extractBrief(events: ReviewEventPayload[]): CaseBrief | null {
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const output = events[i].output;
@@ -33,6 +44,9 @@ export function CaseReviewClient({
   const [events, setEvents] = useState<ReviewEventPayload[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
+  const [starting, setStarting] = useState(false);
+  const [deciding, setDeciding] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const refreshCase = useCallback(async () => {
@@ -63,25 +77,71 @@ export function CaseReviewClient({
     return () => source.close();
   }, [caseDetail.status, patientId, refreshCase]);
 
+  // The event stream can drop silently; polling guarantees the page never
+  // stays stuck on "in_review". A reset to "pending" means the run failed.
+  useEffect(() => {
+    if (!ACTIVE_STATUSES.has(caseDetail.status)) return undefined;
+    const timer = setInterval(async () => {
+      try {
+        const latest = await getCase(patientId);
+        if (latest.status === "in_review") return;
+        setCaseDetail(latest);
+        if (latest.status === "pending") {
+          setError("The review failed on the server. Check the API log, then start it again.");
+        }
+      } catch {
+        // transient; the next tick retries
+      }
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [caseDetail.status, patientId]);
+
+  const busy = ACTIVE_STATUSES.has(caseDetail.status) || deciding !== null;
+  useEffect(() => {
+    if (!busy) return undefined;
+    setElapsed(0);
+    const timer = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [busy]);
+
   const handleStart = async () => {
     setError(null);
+    setStarting(true);
+    setEvents([]);
     try {
       await startReview(patientId);
       setCaseDetail((prev) => ({ ...prev, status: "in_review" }));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setStarting(false);
     }
   };
 
+  // The API resumes the graph in the background, so the decision is only
+  // "recorded" once the case flips to `decided`; poll until it does.
   const handleDecision = async (decision: "enrol" | "decline" | "defer") => {
     setError(null);
+    setDeciding(decision);
     try {
       await submitDecision(patientId, decision, notes || undefined);
-      await refreshCase();
+      for (let attempt = 0; attempt < 40; attempt += 1) {
+        const latest = await getCase(patientId);
+        if (latest.status === "decided") {
+          setCaseDetail(latest);
+          return;
+        }
+        await sleep(1500);
+      }
+      setError("The decision was accepted but not recorded after 60s. Check the API log.");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDeciding(null);
     }
   };
+
+  const lastNode = events.length > 0 ? events[events.length - 1].node : "load_case";
 
   const brief = extractBrief(events);
 
@@ -111,10 +171,18 @@ export function CaseReviewClient({
       {caseDetail.status === "pending" && (
         <button
           onClick={handleStart}
-          className="mt-6 rounded-lg bg-neutral-900 px-4 py-2 text-sm text-white dark:bg-neutral-100 dark:text-neutral-900"
+          disabled={starting}
+          className="mt-6 rounded-lg bg-neutral-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
         >
-          Start review
+          {starting ? "Starting…" : "Start review"}
         </button>
+      )}
+
+      {caseDetail.status === "in_review" && (
+        <p className="mt-6 flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-neutral-400 border-t-transparent" />
+          {STEP_LABELS[lastNode] ?? lastNode}… ({elapsed}s — a review usually takes 20–60s)
+        </p>
       )}
 
       {events.length > 0 && (
@@ -167,25 +235,33 @@ export function CaseReviewClient({
             className="mt-2 w-full rounded-lg border border-neutral-200 p-2 text-sm dark:border-neutral-800 dark:bg-neutral-900"
             rows={2}
           />
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex items-center gap-2">
             <button
               onClick={() => handleDecision("enrol")}
-              className="rounded-lg bg-green-700 px-3 py-1.5 text-sm text-white"
+              disabled={deciding !== null}
+              className="rounded-lg bg-green-700 px-3 py-1.5 text-sm text-white disabled:opacity-50"
             >
               Enrol
             </button>
             <button
               onClick={() => handleDecision("decline")}
-              className="rounded-lg bg-neutral-700 px-3 py-1.5 text-sm text-white"
+              disabled={deciding !== null}
+              className="rounded-lg bg-neutral-700 px-3 py-1.5 text-sm text-white disabled:opacity-50"
             >
               Decline
             </button>
             <button
               onClick={() => handleDecision("defer")}
-              className="rounded-lg bg-amber-700 px-3 py-1.5 text-sm text-white"
+              disabled={deciding !== null}
+              className="rounded-lg bg-amber-700 px-3 py-1.5 text-sm text-white disabled:opacity-50"
             >
               Defer
             </button>
+            {deciding && (
+              <span className="text-sm text-neutral-500">
+                Recording “{deciding}”… ({elapsed}s)
+              </span>
+            )}
           </div>
         </div>
       )}
