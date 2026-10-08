@@ -4,10 +4,16 @@
 
 import type { CaseDetail, LabelChoiceRow, QueueEntry, SubgroupAuditRow } from "./types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+const PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
+// Server components run inside the web container, where the browser-facing URL is not routable.
+function serverSideBaseUrl(): string {
+  return process.env.API_INTERNAL_URL ?? PUBLIC_API_BASE_URL;
+}
 
 async function get<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`);
+  const base = typeof window === "undefined" ? serverSideBaseUrl() : PUBLIC_API_BASE_URL;
+  const response = await fetch(`${base}${path}`);
   if (!response.ok) {
     throw new Error(`${path} failed: ${response.status} ${response.statusText}`);
   }
@@ -24,7 +30,7 @@ export function getCase(patientId: string): Promise<CaseDetail> {
 }
 
 export async function startReview(patientId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/queue/${encodeURIComponent(patientId)}/start`, {
+  const response = await fetch(`${PUBLIC_API_BASE_URL}/queue/${encodeURIComponent(patientId)}/start`, {
     method: "POST",
   });
   if (!response.ok) {
@@ -37,7 +43,7 @@ export async function submitDecision(
   decision: "enrol" | "decline" | "defer",
   notes?: string,
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/queue/${encodeURIComponent(patientId)}/decision`, {
+  const response = await fetch(`${PUBLIC_API_BASE_URL}/queue/${encodeURIComponent(patientId)}/decision`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ decision, notes: notes ?? null }),
@@ -48,7 +54,7 @@ export async function submitDecision(
 }
 
 export function reviewEventsUrl(patientId: string): string {
-  return `${API_BASE_URL}/queue/${encodeURIComponent(patientId)}/events`;
+  return `${PUBLIC_API_BASE_URL}/queue/${encodeURIComponent(patientId)}/events`;
 }
 
 export function getSubgroupAudit(version = "v1_burden"): Promise<SubgroupAuditRow[]> {
