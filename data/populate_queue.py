@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pandas as pd
+
 from cohort.api.deps import DEPLOYED_MODEL_VERSION
 from cohort.pipeline.models.train import FEATURE_COLUMNS, build_scored_feature_table
 from cohort.pipeline.registry import load_model_artifact
@@ -16,9 +18,15 @@ from cohort.settings import get_settings
 from cohort.store.queue_store import QueueStore
 
 
+def living_patient_ids(patients: pd.DataFrame) -> set[str]:
+    """Care-management enrolment is meaningless for a patient with a recorded death."""
+    return set(patients.loc[patients["DEATHDATE"].isna(), "PATIENT_ID"])
+
+
 def main() -> None:
     settings = get_settings()
-    _patients, features = build_scored_feature_table()
+    patients, features = build_scored_feature_table()
+    living = living_patient_ids(patients)
 
     version_dir = Path(settings.registry_dir) / DEPLOYED_MODEL_VERSION
     pipeline, metadata = load_model_artifact(version_dir)
@@ -29,7 +37,7 @@ def main() -> None:
     queue_store = QueueStore(Path(settings.queue_store_path))
     enqueued = 0
     for patient_id, score in zip(features["PATIENT_ID"], scores, strict=True):
-        if score >= metadata.threshold:
+        if score >= metadata.threshold and patient_id in living:
             queue_store.enqueue_case(patient_id, float(score), "high")
             enqueued += 1
 
