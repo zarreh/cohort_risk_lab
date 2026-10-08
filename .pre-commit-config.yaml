@@ -29,4 +29,6 @@ repos:
         # deliberately committed so CI never needs a live Synthea run.
         exclude: ^validation/fixtures/.*\.parquet$
       - id: end-of-file-fixer
+        exclude: \.svg$
       - id: trailing-whitespace
+        exclude: \.svg$

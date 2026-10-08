@@ -20,6 +20,9 @@ COHORT_PATH = REPO_ROOT / "data" / "cohort" / "cohort.parquet"
 STYLE_PATH = REPO_ROOT / "docs" / "assets" / "plot_style.mplstyle"
 OUT_DIR = REPO_ROOT / "docs" / "evidence" / "assets"
 
+# Pinned, not today(): the age chart must not change just because a day passed.
+AGE_REFERENCE_DATE = pd.Timestamp("2026-08-25", tz="UTC")
+
 DARK_OVERRIDES = {
     "figure.facecolor": "#0d1117",
     "axes.facecolor": "#0d1117",
@@ -35,7 +38,7 @@ DARK_OVERRIDES = {
 
 def _save_pair(fig: Figure, name: str) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUT_DIR / f"{name}-light.svg")
+    fig.savefig(OUT_DIR / f"{name}-light.svg", metadata={"Date": None})
     for ax in fig.axes:
         ax.set_facecolor(DARK_OVERRIDES["axes.facecolor"])
     fig.patch.set_facecolor(DARK_OVERRIDES["figure.facecolor"])
@@ -46,7 +49,11 @@ def _save_pair(fig: Figure, name: str) -> None:
         ax.tick_params(colors=DARK_OVERRIDES["xtick.color"])
         for spine in ax.spines.values():
             spine.set_edgecolor(DARK_OVERRIDES["axes.edgecolor"])
-    fig.savefig(OUT_DIR / f"{name}-dark.svg", facecolor=DARK_OVERRIDES["savefig.facecolor"])
+    fig.savefig(
+        OUT_DIR / f"{name}-dark.svg",
+        facecolor=DARK_OVERRIDES["savefig.facecolor"],
+        metadata={"Date": None},
+    )
     plt.close(fig)
 
 
@@ -63,7 +70,7 @@ def plot_race_distribution(cohort: pd.DataFrame) -> None:
 
 def plot_age_distribution(cohort: pd.DataFrame) -> None:
     birthdate = pd.to_datetime(cohort["BIRTHDATE"], utc=True)
-    age_years = (pd.Timestamp.now(tz="UTC") - birthdate).dt.days / 365.25
+    age_years = (AGE_REFERENCE_DATE - birthdate).dt.days / 365.25
     fig, ax = plt.subplots()
     ax.hist(age_years.clip(upper=90), bins=30)
     ax.set_title("Cohort age distribution")
@@ -90,6 +97,7 @@ def main() -> None:
         return
 
     plt.style.use(STYLE_PATH)
+    plt.rcParams["svg.hashsalt"] = "cohort-risk-lab"
     plt.rcParams["axes.prop_cycle"] = plt.cycler(
         color=["#2563eb", "#dc2626", "#059669", "#d97706", "#7c3aed", "#0891b2"]
     )
