@@ -4,30 +4,35 @@ A12 carries both halves of the portfolio's app template at once, and that
 duality is the app's thesis, not a layout compromise: **the model
 decides, the agent explains.**
 
+**Track B: the pipeline (no LLM, ever, see D-A12-1).** Builds, audits and
+versions the risk model.
+
 ```mermaid
 flowchart LR
-    subgraph "Track B — pipeline/ (no LLM, ever — D-A12-1)"
-        DATA[Synthea cohort\nde-identified] --> SPLIT[splits.py\nlookback / forward window]
-        SPLIT --> FEAT[features/\nleakage-safe]
-        SPLIT --> LABEL[labels/\nY_BURDEN · Y_COST]
-        FEAT --> TRAIN[models/train.py\ncalibrated HistGBM]
-        LABEL --> TRAIN
-        TRAIN --> AUDIT[fairness/\nper-stratum, Wilson CI]
-        TRAIN --> REG[(registry/\nversioned artefact)]
-    end
+    DATA["Synthea cohort<br/>de-identified"] --> SPLIT["splits.py<br/>lookback / forward window"]
+    SPLIT --> FEAT["features/<br/>leakage-safe"]
+    SPLIT --> LABEL["labels/<br/>Y_BURDEN · Y_COST"]
+    FEAT --> TRAIN["models/train.py<br/>calibrated HistGBM"]
+    LABEL --> TRAIN
+    TRAIN --> AUDIT["fairness/<br/>per-stratum, Wilson CI"]
+    TRAIN --> REG[("registry/<br/>versioned artefact")]
+```
 
-    subgraph "Track A — graph/ (LangGraph case review)"
-        LOAD[load_case\nmodel score + SHAP drivers] --> EVID[assemble_evidence\nevidence agent + tools]
-        EVID <--> TOOLS[tools/\nread-only, PHI-projected]
-        EVID --> DRAFT[draft_brief\nbrief writer]
-        DRAFT --> VERIFY[verify_brief\ngrounding loop]
-        VERIFY -- ungrounded --> EVID
-        VERIFY --> AWAIT["await_decision\ninterrupt()"]
-        AWAIT --> RECORD[record_decision]
-    end
+**Track A: the graph (LangGraph case review).** Loads the model's score,
+gathers evidence with read-only tools, drafts and verifies a brief, then
+waits for a human.
 
-    REG --> LOAD
-    TOOLS --> STORE[(cohort_store.db\nread-only)]
+```mermaid
+flowchart TB
+    REG[("registry/<br/>versioned artefact")] --> LOAD["load_case<br/>model score + SHAP drivers"]
+    LOAD --> EVID["assemble_evidence<br/>evidence agent + tools"]
+    EVID <--> TOOLS["tools/<br/>read-only, PHI-projected"]
+    TOOLS --> STORE[("cohort_store.db<br/>read-only")]
+    EVID --> DRAFT["draft_brief<br/>brief writer"]
+    DRAFT --> VERIFY["verify_brief<br/>grounding loop"]
+    VERIFY -- ungrounded --> EVID
+    VERIFY --> AWAIT["await_decision<br/>interrupt()"]
+    AWAIT --> RECORD["record_decision"]
 ```
 
 ## Why two halves, not one
