@@ -87,4 +87,5 @@ nav:
       - Validation harness: evidence/validation-harness.md
   - Regulatory basis: regulatory-basis.md
   - Run it yourself: run-it-yourself.md
+  - Deployment guide: deployment.md
   - API: api.md

@@ -58,6 +58,10 @@ uv run python -m data.populate_queue
 
 ## Deploying (compose.prod.yaml)
 
+For a complete step-by-step walkthrough (server setup, copying the data,
+HTTPS, operations, troubleshooting) follow the
+[Deployment guide](deployment.md). This section is the reference behind it.
+
 The production stack publishes no host ports; a reverse proxy on the
 external `edge` Docker network is the only way in. The API image
 deliberately excludes `data/` and `artifacts/`; they are bind-mounted.

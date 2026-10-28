@@ -84,6 +84,9 @@ make test
 make dev               # http://localhost:8000/healthz
 ```
 
+To put it on a server (Docker, HTTPS, password-protected), follow
+[docs/deployment.md](docs/deployment.md).
+
 ## Layout
 
 | Path | Purpose |
