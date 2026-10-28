@@ -134,6 +134,47 @@ Then:
 docker compose -f compose.prod.yaml up -d --build
 ```
 
+## Inspecting the agent in LangGraph Studio
+
+The case-review graph can be run and stepped through in LangGraph Studio.
+It is configured in `langgraph.json` and uses the same model, data and
+`.env` as the API, so run `make data && make train` first.
+
+```bash
+make studio    # API on http://127.0.0.1:2024, opens Studio in the browser
+```
+
+Pick the **case_review** graph and paste this input (Studio needs the full
+initial state; use a `patient_id` from the review queue):
+
+```json
+{
+  "patient_id": "PASTE-A-PATIENT-ID-FROM-THE-QUEUE",
+  "messages": [],
+  "risk_score": 0.0,
+  "risk_tier": "",
+  "drivers": [],
+  "draft_brief": null,
+  "verification_feedback": [],
+  "revision_count": 0,
+  "decision": null,
+  "override_notes": null
+}
+```
+
+The run pauses at `await_decision`, the human-in-the-loop interrupt.
+Resume it with `{"decision": "defer", "notes": "optional"}` (`enrol`,
+`decline` or `defer`).
+
+- Threads live in memory (and `.langgraph_api/`) and are separate from the
+  app's `queue.db`; nothing here appears in the web UI.
+- On a remote machine, forward port 2024 (VS Code does this automatically).
+  If the browser blocks the local connection, use
+  `uvx --python 3.12 --from "langgraph-cli[inmem]==0.4.40" --with-editable . langgraph dev --tunnel`.
+- The dev server logs "Deserializing unregistered type CaseBrief/Driver".
+  It is harmless here: `langgraph.json` cannot set the msgpack allowlist,
+  while the API itself uses an explicit one (`graph/checkpointing.py`).
+
 ## Regenerating docs assets
 
 ```bash

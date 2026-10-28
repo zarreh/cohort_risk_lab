@@ -1,0 +1,9 @@
+{
+  "$schema": "https://langgra.ph/schema.json",
+  "python_version": "3.12",
+  "dependencies": ["."],
+  "graphs": {
+    "case_review": "./src/cohort/api/langgraph_studio.py:make_case_review_graph"
+  },
+  "env": ".env"
+}

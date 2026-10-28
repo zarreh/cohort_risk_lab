@@ -65,6 +65,19 @@ def build_case_review_graph(
     `AsyncSqliteSaver` via `api/main.py`'s lifespan — a review can be
     interrupted and resumed across process restarts, not just within one.
     """
+    workflow = build_case_review_workflow(settings, model_version_dir, feature_table, store)
+    return workflow.compile(checkpointer=checkpointer or MemorySaver())
+
+
+def build_case_review_workflow(
+    settings: Settings,
+    model_version_dir: Path,
+    feature_table: pd.DataFrame,
+    store: CohortStore,
+) -> StateGraph[CaseReviewState]:
+    """The uncompiled case-review graph. `build_case_review_graph` compiles
+    it with a checkpointer; `langgraph dev` compiles it without one because
+    the LangGraph server supplies its own persistence."""
     tools = build_tools(store, model_version_dir, feature_table)
     fast_model = build_fast_model(settings)
     reasoning_model = build_reasoning_model(settings)
@@ -104,5 +117,4 @@ def build_case_review_graph(
     workflow.add_conditional_edges("verify_brief", route_after_verify)
     workflow.add_edge("await_decision", "record_decision")
     workflow.add_edge("record_decision", END)
-
-    return workflow.compile(checkpointer=checkpointer or MemorySaver())
+    return workflow

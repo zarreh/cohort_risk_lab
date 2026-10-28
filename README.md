@@ -84,6 +84,9 @@ make test
 make dev               # http://localhost:8000/healthz
 ```
 
+To step through the agent graph in LangGraph Studio, run `make studio`
+(see [Run it yourself](docs/run-it-yourself.md#inspecting-the-agent-in-langgraph-studio)).
+
 To put it on a server (Docker, HTTPS, password-protected), follow
 [docs/deployment.md](docs/deployment.md).
 

@@ -1,4 +1,4 @@
-.PHONY: run dev test lint typecheck imports validate up down data train docs docs-assets docs-screenshots frontend-dev frontend-build frontend-types frontend-e2e
+.PHONY: run dev studio test lint typecheck imports validate up down data train docs docs-assets docs-screenshots frontend-dev frontend-build frontend-types frontend-e2e
 
 # API on :8000 and frontend on :3000; Ctrl-C stops both.
 run:
@@ -10,6 +10,12 @@ run:
 
 dev:
 	uv run uvicorn cohort.api.main:app --reload --port 8000
+
+# LangGraph Studio for the case-review graph (langgraph.json). Runs the CLI in
+# an isolated uvx environment: langgraph-api pins structlog<26, which must not
+# leak into the app's lockfile.
+studio:
+	uvx --python 3.12 --from "langgraph-cli[inmem]==0.4.40" --with-editable . langgraph dev
 
 test:
 	uv run pytest -v
