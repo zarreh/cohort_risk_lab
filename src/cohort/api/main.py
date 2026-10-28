@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import aiosqlite
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
@@ -10,6 +11,7 @@ from slowapi.errors import RateLimitExceeded
 from cohort.api.middleware import MaxBodySizeMiddleware
 from cohort.api.rate_limit import limiter
 from cohort.api.routes import evidence, health, queue
+from cohort.graph.checkpointing import build_checkpoint_serializer
 from cohort.observability import configure_logging
 from cohort.settings import get_settings
 
@@ -22,8 +24,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Opens the checkpointer once at process startup, so an interrupted
     case review survives a server restart — not just an in-memory pause
     within one process (`graph/builder.py`'s `checkpointer` parameter)."""
-    async with AsyncSqliteSaver.from_conn_string(settings.checkpoint_db_path) as checkpointer:
-        app.state.checkpointer = checkpointer
+    async with aiosqlite.connect(settings.checkpoint_db_path) as conn:
+        app.state.checkpointer = AsyncSqliteSaver(conn, serde=build_checkpoint_serializer())
         yield
 
 
