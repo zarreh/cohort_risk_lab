@@ -11,7 +11,7 @@
         <link rel="prev" href="../regulatory-basis/">
       
       
-        <link rel="next" href="../api/">
+        <link rel="next" href="../deployment/">
       
       
         
@@ -341,6 +341,25 @@
     
   
   Run it yourself
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../deployment/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Deployment guide
 
       </a>
     </li>
@@ -1188,10 +1207,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#quick-path-backend-only-using-the-committed-sample" class="md-nav__link">
+  <a href="#quick-path-backend-only-using-the-committed-fixtures" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick path — backend only, using the committed sample
+        Quick path — backend only, using the committed fixtures
       
     </span>
   </a>
@@ -1238,6 +1257,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#inspecting-the-agent-in-langgraph-studio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspecting the agent in LangGraph Studio
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#regenerating-docs-assets" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1263,6 +1293,33 @@
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1321,10 +1378,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#quick-path-backend-only-using-the-committed-sample" class="md-nav__link">
+  <a href="#quick-path-backend-only-using-the-committed-fixtures" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick path — backend only, using the committed sample
+        Quick path — backend only, using the committed fixtures
       
     </span>
   </a>
@@ -1364,6 +1421,17 @@
     <span class="md-ellipsis">
       
         Deploying (compose.prod.yaml)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspecting-the-agent-in-langgraph-studio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspecting the agent in LangGraph Studio
       
     </span>
   </a>
@@ -1418,7 +1486,7 @@
 
 
 <h1 id="run-it-yourself">Run it yourself<a class="headerlink" href="#run-it-yourself" title="Permanent link">¶</a></h1>
-<h2 id="quick-path-backend-only-using-the-committed-sample">Quick path — backend only, using the committed sample<a class="headerlink" href="#quick-path-backend-only-using-the-committed-sample" title="Permanent link">¶</a></h2>
+<h2 id="quick-path-backend-only-using-the-committed-fixtures">Quick path — backend only, using the committed fixtures<a class="headerlink" href="#quick-path-backend-only-using-the-committed-fixtures" title="Permanent link">¶</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>dev
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env<span class="w">   </span><span class="c1"># OpenAI key optional — only the evidence agent's LLM nodes need it</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>make<span class="w"> </span><span class="nb">test</span><span class="w">              </span><span class="c1"># 120 tests, no external data required</span>
@@ -1462,6 +1530,9 @@ and <strong>Start Review</strong> answers 404 ("not in the scored cohort").</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>data.populate_queue
 </code></pre></div>
 <h2 id="deploying-composeprodyaml">Deploying (compose.prod.yaml)<a class="headerlink" href="#deploying-composeprodyaml" title="Permanent link">¶</a></h2>
+<p>For a complete step-by-step walkthrough (server setup, copying the data,
+HTTPS, operations, troubleshooting) follow the
+<a href="../deployment/">Deployment guide</a>. This section is the reference behind it.</p>
 <p>The production stack publishes no host ports; a reverse proxy on the
 external <code>edge</code> Docker network is the only way in. The API image
 deliberately excludes <code>data/</code> and <code>artifacts/</code>; they are bind-mounted.</p>
@@ -1525,15 +1596,49 @@ hash with <code>caddy hash-password</code>):</p>
 <p>Then:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>compose.prod.yaml<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--build
 </code></pre></div>
+<h2 id="inspecting-the-agent-in-langgraph-studio">Inspecting the agent in LangGraph Studio<a class="headerlink" href="#inspecting-the-agent-in-langgraph-studio" title="Permanent link">¶</a></h2>
+<p>The case-review graph can be run and stepped through in LangGraph Studio.
+It is configured in <code>langgraph.json</code> and uses the same model, data and
+<code>.env</code> as the API, so run <code>make data &amp;&amp; make train</code> first.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>make<span class="w"> </span>studio<span class="w">    </span><span class="c1"># API on http://127.0.0.1:2024, opens Studio in the browser</span>
+</code></pre></div>
+<p>Pick the <strong>case_review</strong> graph and paste this input (Studio needs the full
+initial state; use a <code>patient_id</code> from the review queue):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">"patient_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PASTE-A-PATIENT-ID-FROM-THE-QUEUE"</span><span class="p">,</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">"messages"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">"risk_score"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="nt">"risk_tier"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span><span class="nt">"drivers"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">  </span><span class="nt">"draft_brief"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">  </span><span class="nt">"verification_feedback"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">  </span><span class="nt">"revision_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">  </span><span class="nt">"decision"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">  </span><span class="nt">"override_notes"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="p">}</span>
+</code></pre></div>
+<p>The run pauses at <code>await_decision</code>, the human-in-the-loop interrupt.
+Resume it with <code>{"decision": "defer", "notes": "optional"}</code> (<code>enrol</code>,
+<code>decline</code> or <code>defer</code>).</p>
+<ul>
+<li>Threads live in memory (and <code>.langgraph_api/</code>) and are separate from the
+  app's <code>queue.db</code>; nothing here appears in the web UI.</li>
+<li>On a remote machine, forward port 2024 (VS Code does this automatically).
+  If the browser blocks the local connection, use
+  <code>uvx --python 3.12 --from "langgraph-cli[inmem]==0.4.40" --with-editable . langgraph dev --tunnel</code>.</li>
+<li>The dev server logs "Deserializing unregistered type CaseBrief/Driver".
+  It is harmless here: <code>langgraph.json</code> cannot set the msgpack allowlist,
+  while the API itself uses an explicit one (<code>graph/checkpointing.py</code>).</li>
+</ul>
 <h2 id="regenerating-docs-assets">Regenerating docs assets<a class="headerlink" href="#regenerating-docs-assets" title="Permanent link">¶</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>make<span class="w"> </span>docs-assets<span class="w">       </span><span class="c1"># regenerates docs/evidence/assets/*.svg from the trained models</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>make<span class="w"> </span>docs-screenshots<span class="w">  </span><span class="c1"># re-captures docs/assets/homepage-screenshot.png via Playwright</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>make<span class="w"> </span>docs<span class="w">              </span><span class="c1"># serves the MkDocs site locally</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>make<span class="w"> </span>docs-assets<span class="w">       </span><span class="c1"># regenerates docs/evidence/assets/*.svg from the trained models</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>make<span class="w"> </span>docs-screenshots<span class="w">  </span><span class="c1"># re-captures docs/assets/homepage-screenshot.png via Playwright</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>make<span class="w"> </span>docs<span class="w">              </span><span class="c1"># serves the MkDocs site locally</span>
 </code></pre></div>
 <h2 id="regenerating-the-validation-harnesss-frozen-fixture">Regenerating the validation harness's frozen fixture<a class="headerlink" href="#regenerating-the-validation-harnesss-frozen-fixture" title="Permanent link">¶</a></h2>
 <p>Only needed if you want to re-seed it (e.g. after a new <code>make data</code> run
 with a different Synthea seed) — this is not part of <code>make data</code> or CI:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">PYTHONPATH</span><span class="o">=</span>.<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>validation.fixtures.build_frozen_fixture
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">PYTHONPATH</span><span class="o">=</span>.<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>validation.fixtures.build_frozen_fixture
 </code></pre></div>
 
 
