@@ -1207,6 +1207,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Full path — generate the cohort, train, and run the frontend">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rebuilding-the-review-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rebuilding the review queue
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-composeprodyaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deploying (compose.prod.yaml)
+      
+    </span>
+  </a>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1312,6 +1340,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Full path — generate the cohort, train, and run the frontend">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rebuilding-the-review-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rebuilding the review queue
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-composeprodyaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deploying (compose.prod.yaml)
+      
+    </span>
+  </a>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1396,15 +1452,88 @@ an install command if none is found — no root required) and roughly
 the queue, case detail, and both evidence pages all render real data from
 the trained models. Starting a review will fail at the point it needs to
 call the LLM; this is expected and disclosed on the case page.</p>
+<h3 id="rebuilding-the-review-queue">Rebuilding the review queue<a class="headerlink" href="#rebuilding-the-review-queue" title="Permanent link">¶</a></h3>
+<p><code>make train</code> ends by running <code>python -m data.populate_queue</code>, which
+<strong>clears</strong> every queued case, review event and paused review checkpoint
+and then re-enqueues the patients the deployed model flags. Stop the API
+before running it, and rerun it whenever <code>make data</code> regenerates the
+cohort. Otherwise the queue would point at patients that no longer exist,
+and <strong>Start Review</strong> answers 404 ("not in the scored cohort").</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>data.populate_queue
+</code></pre></div>
+<h2 id="deploying-composeprodyaml">Deploying (compose.prod.yaml)<a class="headerlink" href="#deploying-composeprodyaml" title="Permanent link">¶</a></h2>
+<p>The production stack publishes no host ports; a reverse proxy on the
+external <code>edge</code> Docker network is the only way in. The API image
+deliberately excludes <code>data/</code> and <code>artifacts/</code>; they are bind-mounted.</p>
+<ol>
+<li><strong>Prepare data on the host.</strong> Run <code>make data &amp;&amp; make train</code> there, or
+   copy <code>data/</code> (the <code>.db</code> and <code>interim/deidentified/</code> files) and
+   <code>artifacts/registry/</code> from a machine that did. Either way, the queue
+   must be built from the same cohort the API loads (see above).</li>
+<li><strong>Set production values in <code>.env</code>:</strong></li>
+<li><code>COHORT_ENVIRONMENT=production</code> (JSON logs instead of the dev console format).</li>
+<li><code>WEB_PUBLIC_API_URL=https://your.domain/api</code>: inlined into the
+     frontend bundle at build time, so rebuild after changing it.</li>
+<li><code>WEB_DOCS_URL</code> (optional, build time): where the app's <strong>Docs</strong> links
+     point (passed to the frontend as <code>NEXT_PUBLIC_DOCS_URL</code>). Defaults to <code>https://zarreh.ai/clinical_care_navigator/</code>.</li>
+<li><code>COHORT_FRONTEND_ORIGINS='["https://your.domain"]'</code>: the CORS
+     allow-list. Only needed if the API is served from a different
+     origin than the frontend (the proxy layout below keeps them on one
+     origin); the default allows localhost only.</li>
+<li><code>COHORT_OPENAI_API_KEY</code> (and optionally LangSmith) for reviews.</li>
+<li><strong>Put the whole site behind authentication at the proxy.</strong> The API
+   has no user accounts: anyone who reaches <code>POST /queue/{id}/start</code> or
+   <code>/decision</code> can launch LLM runs (which cost money) and record decisions.
+   HTTP basic auth on the proxy covers both the frontend and the browser's
+   direct API calls (the browser resends the credentials automatically).</li>
+<li><strong>Make the proxy overwrite <code>X-Forwarded-For</code>.</strong> The API trusts that
+   header from any peer (<code>--forwarded-allow-ips "*"</code>, safe only because no
+   port is published) and rate-limits per client IP. If the proxy appends
+   to a client-supplied header instead of replacing it, clients can
+   choose their own IP and bypass the limit.</li>
+</ol>
+<p>Caddy (sets <code>X-Forwarded-For</code> from the real peer by default; generate the
+hash with <code>caddy hash-password</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>your.domain<span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="k">basic_auth</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span>reviewer<span class="w"> </span>$2a$14$...bcrypt-hash...
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="k">handle_path</span><span class="w"> </span>/api/*<span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="k">reverse_proxy</span><span class="w"> </span>cohort-api:8000
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="k">reverse_proxy</span><span class="w"> </span>cohort-web:3000
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="p">}</span>
+</code></pre></div>
+<p>nginx (create the file with <code>htpasswd -c /etc/nginx/.htpasswd reviewer</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">your.domain</span><span class="p">;</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="kn">auth_basic</span><span class="w">           </span><span class="s">"Cohort</span><span class="w"> </span><span class="s">Risk</span><span class="w"> </span><span class="s">Lab"</span><span class="p">;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="kn">auth_basic_user_file</span><span class="w"> </span><span class="s">/etc/nginx/.htpasswd</span><span class="p">;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/api/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://cohort-api:8000/</span><span class="p">;</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w">   </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">   </span><span class="c1"># overwrite, don't append</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">        </span><span class="kn">proxy_buffering</span><span class="w"> </span><span class="no">off</span><span class="p">;</span><span class="w">                               </span><span class="c1"># SSE review stream</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://cohort-web:3000</span><span class="p">;</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="p">}</span>
+</code></pre></div>
+<p>Then:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>compose.prod.yaml<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--build
+</code></pre></div>
 <h2 id="regenerating-docs-assets">Regenerating docs assets<a class="headerlink" href="#regenerating-docs-assets" title="Permanent link">¶</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>make<span class="w"> </span>docs-assets<span class="w">       </span><span class="c1"># regenerates docs/evidence/assets/*.svg from the trained models</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>make<span class="w"> </span>docs-screenshots<span class="w">  </span><span class="c1"># re-captures docs/assets/homepage-screenshot.png via Playwright</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>make<span class="w"> </span>docs<span class="w">              </span><span class="c1"># serves the MkDocs site locally</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>make<span class="w"> </span>docs-assets<span class="w">       </span><span class="c1"># regenerates docs/evidence/assets/*.svg from the trained models</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>make<span class="w"> </span>docs-screenshots<span class="w">  </span><span class="c1"># re-captures docs/assets/homepage-screenshot.png via Playwright</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>make<span class="w"> </span>docs<span class="w">              </span><span class="c1"># serves the MkDocs site locally</span>
 </code></pre></div>
 <h2 id="regenerating-the-validation-harnesss-frozen-fixture">Regenerating the validation harness's frozen fixture<a class="headerlink" href="#regenerating-the-validation-harnesss-frozen-fixture" title="Permanent link">¶</a></h2>
 <p>Only needed if you want to re-seed it (e.g. after a new <code>make data</code> run
 with a different Synthea seed) — this is not part of <code>make data</code> or CI:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">PYTHONPATH</span><span class="o">=</span>.<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>validation.fixtures.build_frozen_fixture
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">PYTHONPATH</span><span class="o">=</span>.<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>validation.fixtures.build_frozen_fixture
 </code></pre></div>
 
 
@@ -1465,6 +1594,8 @@ with a different Synthea seed) — this is not part of <code>make data</code> or
     
     
       <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/javascripts/mermaid.min.js"></script>
       
     
   

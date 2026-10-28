@@ -1395,29 +1395,29 @@
 <p>A12 carries both halves of the portfolio's app template at once, and that
 duality is the app's thesis, not a layout compromise: <strong>the model
 decides, the agent explains.</strong></p>
+<p><strong>Track B: the pipeline (no LLM, ever, see D-A12-1).</strong> Builds, audits and
+versions the risk model.</p>
 <pre class="mermaid"><code>flowchart LR
-    subgraph "Track B — pipeline/ (no LLM, ever — D-A12-1)"
-        DATA[Synthea cohort\nde-identified] --&gt; SPLIT[splits.py\nlookback / forward window]
-        SPLIT --&gt; FEAT[features/\nleakage-safe]
-        SPLIT --&gt; LABEL[labels/\nY_BURDEN · Y_COST]
-        FEAT --&gt; TRAIN[models/train.py\ncalibrated HistGBM]
-        LABEL --&gt; TRAIN
-        TRAIN --&gt; AUDIT[fairness/\nper-stratum, Wilson CI]
-        TRAIN --&gt; REG[(registry/\nversioned artefact)]
-    end
-
-    subgraph "Track A — graph/ (LangGraph case review)"
-        LOAD[load_case\nmodel score + SHAP drivers] --&gt; EVID[assemble_evidence\nevidence agent + tools]
-        EVID &lt;--&gt; TOOLS[tools/\nread-only, PHI-projected]
-        EVID --&gt; DRAFT[draft_brief\nbrief writer]
-        DRAFT --&gt; VERIFY[verify_brief\ngrounding loop]
-        VERIFY -- ungrounded --&gt; EVID
-        VERIFY --&gt; AWAIT["await_decision\ninterrupt()"]
-        AWAIT --&gt; RECORD[record_decision]
-    end
-
-    REG --&gt; LOAD
-    TOOLS --&gt; STORE[(cohort_store.db\nread-only)]</code></pre>
+    DATA["Synthea cohort&lt;br/&gt;de-identified"] --&gt; SPLIT["splits.py&lt;br/&gt;lookback / forward window"]
+    SPLIT --&gt; FEAT["features/&lt;br/&gt;leakage-safe"]
+    SPLIT --&gt; LABEL["labels/&lt;br/&gt;Y_BURDEN · Y_COST"]
+    FEAT --&gt; TRAIN["models/train.py&lt;br/&gt;calibrated HistGBM"]
+    LABEL --&gt; TRAIN
+    TRAIN --&gt; AUDIT["fairness/&lt;br/&gt;per-stratum, Wilson CI"]
+    TRAIN --&gt; REG[("registry/&lt;br/&gt;versioned artefact")]</code></pre>
+<p><strong>Track A: the graph (LangGraph case review).</strong> Loads the model's score,
+gathers evidence with read-only tools, drafts and verifies a brief, then
+waits for a human.</p>
+<pre class="mermaid"><code>flowchart TB
+    REG[("registry/&lt;br/&gt;versioned artefact")] --&gt; LOAD["load_case&lt;br/&gt;model score + SHAP drivers"]
+    LOAD --&gt; EVID["assemble_evidence&lt;br/&gt;evidence agent + tools"]
+    EVID &lt;--&gt; TOOLS["tools/&lt;br/&gt;read-only, PHI-projected"]
+    TOOLS --&gt; STORE[("cohort_store.db&lt;br/&gt;read-only")]
+    EVID --&gt; DRAFT["draft_brief&lt;br/&gt;brief writer"]
+    DRAFT --&gt; VERIFY["verify_brief&lt;br/&gt;grounding loop"]
+    VERIFY -- ungrounded --&gt; EVID
+    VERIFY --&gt; AWAIT["await_decision&lt;br/&gt;interrupt()"]
+    AWAIT --&gt; RECORD["record_decision"]</code></pre>
 <h2 id="why-two-halves-not-one">Why two halves, not one<a class="headerlink" href="#why-two-halves-not-one" title="Permanent link">¶</a></h2>
 <p>Every number a clinician could act on without a human in the loop —
 the risk score, the risk tier, the fairness audit — comes out of <code>pipeline/</code>,
@@ -1551,6 +1551,8 @@ brief scenarios run against the real, non-LLM parts of the graph.</p>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/javascripts/mermaid.min.js"></script>
       
     
   
