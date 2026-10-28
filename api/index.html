@@ -1367,21 +1367,21 @@ within one process (<code>graph/builder.py</code>'s <code>checkpointer</code> pa
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/cohort/api/main.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span>
+              <div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-22">22</a></span>
 <span class="normal"><a href="#__codelineno-0-23">23</a></span>
 <span class="normal"><a href="#__codelineno-0-24">24</a></span>
 <span class="normal"><a href="#__codelineno-0-25">25</a></span>
 <span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="nd">@asynccontextmanager</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">lifespan</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">FastAPI</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="w">    </span><span class="sd">"""Opens the checkpointer once at process startup, so an interrupted</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    case review survives a server restart — not just an in-memory pause</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">    within one process (`graph/builder.py`'s `checkpointer` parameter)."""</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="k">async</span> <span class="k">with</span> <span class="n">AsyncSqliteSaver</span><span class="o">.</span><span class="n">from_conn_string</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">checkpoint_db_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">checkpointer</span><span class="p">:</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a>        <span class="n">app</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">checkpointer</span> <span class="o">=</span> <span class="n">checkpointer</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="k">yield</span>
+<span class="normal"><a href="#__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#__codelineno-0-29">29</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="nd">@asynccontextmanager</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">lifespan</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">FastAPI</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="w">    </span><span class="sd">"""Opens the checkpointer once at process startup, so an interrupted</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">    case review survives a server restart — not just an in-memory pause</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">    within one process (`graph/builder.py`'s `checkpointer` parameter)."""</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>    <span class="k">async</span> <span class="k">with</span> <span class="n">aiosqlite</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">checkpoint_db_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a>        <span class="n">app</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">checkpointer</span> <span class="o">=</span> <span class="n">AsyncSqliteSaver</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">serde</span><span class="o">=</span><span class="n">build_checkpoint_serializer</span><span class="p">())</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a>        <span class="k">yield</span>
 </code></pre></div></td></tr></tbody></table></div>
             </details>
     </div>
