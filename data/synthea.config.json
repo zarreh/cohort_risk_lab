@@ -1,5 +1,5 @@
 {
-  "_comment": "Committed generation parameters for reproducibility (D-A12-2 discipline: every synthetic mechanism this app relies on is a published, seeded parameter, not a hidden default). The jar and raw CSV output are gitignored; this file plus the small deidentified sample under data/sample/ are what's committed.",
+  "_comment": "Committed generation parameters for reproducibility (D-A12-2 discipline: every synthetic mechanism this app relies on is a published, seeded parameter, not a hidden default). The jar and raw CSV output are gitignored; this file is what's committed; the small deidentified preview under data/sample/ is regenerated locally by `make data`.",
   "synthea_release": "master-branch-latest",
   "synthea_jar_sha256_pin": null,
   "seed": 42,

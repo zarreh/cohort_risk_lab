@@ -81,7 +81,7 @@ def main() -> None:
     out_path = COHORT_DIR / "cohort.parquet"
     cohort.to_parquet(out_path, index=False)
     print(f"cohort: {len(cohort):,} patients, {cohort.shape[1]} columns -> {out_path}")
-    print("Run data.inject_access_gap next — it also writes the committed data/sample/.")
+    print("Run data.inject_access_gap next — it also writes a local sample to data/sample/.")
 
 
 if __name__ == "__main__":

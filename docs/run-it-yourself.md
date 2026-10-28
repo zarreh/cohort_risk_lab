@@ -1,6 +1,6 @@
 # Run it yourself
 
-## Quick path — backend only, using the committed sample
+## Quick path — backend only, using the committed fixtures
 
 ```bash
 uv sync --extra dev
