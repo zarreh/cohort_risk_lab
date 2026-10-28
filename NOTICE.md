@@ -11,3 +11,6 @@ data is used anywhere in this repository or its deployment.
 This is a research prototype and architectural demonstration. It is not a
 medical device, does not diagnose disease, and must never be deployed
 against real patient data. See `docs/regulatory-basis.md`.
+
+The docs vendor [Mermaid](https://mermaid.js.org/) 11.17.2 (MIT License) at
+`docs/assets/javascripts/mermaid.min.js` so diagrams render without a CDN.

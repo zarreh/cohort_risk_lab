@@ -40,6 +40,12 @@ plugins:
         python:
           paths: [src]
 
+# Mermaid is vendored, not fetched from a CDN: Material only loads it from
+# unpkg.com when `window.mermaid` is undefined, and where that host is blocked
+# the diagrams show as raw code. Loading this first makes Material use it.
+extra_javascript:
+  - assets/javascripts/mermaid.min.js
+
 markdown_extensions:
   - admonition
   - attr_list

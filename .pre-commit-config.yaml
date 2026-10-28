@@ -27,8 +27,10 @@ repos:
         # metric floors (docs/evidence/validation-harness.md) — a real,
         # seeded, stratified sample of the generated Synthea cohort,
         # deliberately committed so CI never needs a live Synthea run.
-        exclude: ^validation/fixtures/.*\.parquet$
+        # docs/assets/javascripts/mermaid.min.js: vendored so the docs' diagrams
+        # render without a CDN (see mkdocs.yml extra_javascript).
+        exclude: ^(validation/fixtures/.*\.parquet|docs/assets/javascripts/mermaid\.min\.js)$
       - id: end-of-file-fixer
-        exclude: \.svg$
+        exclude: \.svg$|^docs/assets/javascripts/mermaid\.min\.js$
       - id: trailing-whitespace
-        exclude: \.svg$
+        exclude: \.svg$|^docs/assets/javascripts/mermaid\.min\.js$
