@@ -7,7 +7,7 @@ export interface QueueEntry {
   patient_id: string;
   risk_score: number;
   risk_tier: string;
-  status: "pending" | "in_review" | "awaiting_decision" | "decided";
+  status: "pending" | "in_review" | "awaiting_decision" | "deciding" | "decided";
   created_at: string;
   updated_at: string;
 }

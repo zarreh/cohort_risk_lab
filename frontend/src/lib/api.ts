@@ -20,6 +20,19 @@ async function get<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+// FastAPI puts the human-readable reason in `detail`; surface it rather than a bare status code.
+async function failureMessage(action: string, response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { detail?: unknown };
+    if (typeof body.detail === "string") {
+      return `${action} failed: ${response.status} — ${body.detail}`;
+    }
+  } catch {
+    // non-JSON body; fall through
+  }
+  return `${action} failed: ${response.status}`;
+}
+
 export function getQueue(status?: string): Promise<QueueEntry[]> {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return get<QueueEntry[]>(`/queue${query}`);
@@ -34,7 +47,7 @@ export async function startReview(patientId: string): Promise<void> {
     method: "POST",
   });
   if (!response.ok) {
-    throw new Error(`start review failed: ${response.status}`);
+    throw new Error(await failureMessage("start review", response));
   }
 }
 
@@ -49,7 +62,7 @@ export async function submitDecision(
     body: JSON.stringify({ decision, notes: notes ?? null }),
   });
   if (!response.ok) {
-    throw new Error(`submit decision failed: ${response.status}`);
+    throw new Error(await failureMessage("submit decision", response));
   }
 }
 

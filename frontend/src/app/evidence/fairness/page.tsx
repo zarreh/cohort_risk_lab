@@ -1,5 +1,11 @@
-import { getSubgroupAudit } from "@/lib/api";
+import { Scale } from "lucide-react";
+
 import { SubgroupTable } from "@/components/SubgroupTable";
+import { Callout } from "@/components/ui/Callout";
+import { Card } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { getSubgroupAudit } from "@/lib/api";
+import { docsLink } from "@/lib/docs";
 import type { SubgroupAuditRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -15,42 +21,73 @@ export default async function FairnessPage() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl p-8 font-sans">
-      <h1 className="text-2xl font-bold">Subgroup fairness audit</h1>
-      <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-        Computed on the held-out validation set only — never on data the
-        model was trained on. A stratum below 30 patients is shown, not
-        dropped, with every rate reported as insufficient rather than a
-        misleadingly precise number. See{" "}
-        <a
-          className="underline"
-          href="https://github.com/zarreh/cohort_risk_lab/blob/main/docs/architecture/decisions/D-A12-5-min-n-confidence-intervals.md"
-        >
-          D-A12-5
-        </a>
-        .
-      </p>
+    <main>
+      <PageHeader
+        icon={Scale}
+        eyebrow="Step 2 · Fairness"
+        title="Subgroup fairness audit"
+        docsHref={docsLink("fairnessAudit")}
+        docsLabel="Read the full fairness audit"
+      >
+        <p>
+          A model can look accurate overall while quietly failing one group of patients. So
+          instead of one overall score, this audit reports how the risk model performs for
+          <strong className="text-slate-900 dark:text-white"> each demographic group separately</strong>.
+        </p>
+        <p>
+          The key column is the <strong className="text-slate-900 dark:text-white">true-positive rate</strong>:
+          of the patients who really did go on to have a high illness burden, what share the
+          model caught. Similar rates across groups mean the model misses people at similar rates
+          regardless of who they are.
+        </p>
+      </PageHeader>
+
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <Card>
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">Held-out data only</p>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Computed on patients the model never saw during training.
+          </p>
+        </Card>
+        <Card>
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">Uncertainty shown</p>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            The shaded bar is the 95% confidence interval; the dark tick is the estimate.{" "}
+            <a className="text-teal-700 underline dark:text-teal-400" href={docsLink("minNConfidenceIntervals")} target="_blank" rel="noreferrer">
+              Why
+            </a>
+          </p>
+        </Card>
+        <Card>
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">Small groups not hidden</p>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Groups under 30 patients are listed but get no number, rather than a misleadingly precise one.
+          </p>
+        </Card>
+      </div>
 
       {error && (
-        <p className="mt-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
-          Could not reach the backend ({error}). Run{" "}
-          <code>make data &amp;&amp; make train</code> first.
-        </p>
+        <Callout variant="warning" title="Could not reach the backend">
+          {error}. Run <code>make data &amp;&amp; make train</code> first.
+        </Callout>
       )}
 
-      {rows.length > 0 && <SubgroupTable rows={rows} />}
+      {rows.length > 0 && (
+        <Card padded={false} className="overflow-hidden">
+          <SubgroupTable rows={rows} />
+        </Card>
+      )}
 
-      <p className="mt-6 text-xs text-neutral-400">
-        Model <code>v1_burden</code> is calibrated, not equalised-odds-matched
-        — the two cannot both hold once base rates differ across strata. See{" "}
-        <a
-          className="underline"
-          href="https://github.com/zarreh/cohort_risk_lab/blob/main/docs/architecture/decisions/D-A12-3-calibration-over-equalised-odds.md"
-        >
-          D-A12-3
+      <Callout className="mt-6" title="Why not make every rate exactly equal?">
+        The deployed model is <em>calibrated</em> — a score of 0.4 means roughly a 40% chance for
+        every group. Once groups have different underlying rates of illness, a model cannot be
+        both calibrated and have identical error rates everywhere; this project chose
+        calibration.{" "}
+        <a className="font-medium underline" href={docsLink("calibrationOverEqualisedOdds")} target="_blank" rel="noreferrer">
+          Read the decision
         </a>
         .
-      </p>
+      </Callout>
     </main>
   );
 }

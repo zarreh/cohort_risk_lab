@@ -25,6 +25,7 @@ services:
       context: ./frontend
       args:
         NEXT_PUBLIC_API_BASE_URL: ${WEB_PUBLIC_API_URL:-http://localhost/api}
+        NEXT_PUBLIC_DOCS_URL: ${WEB_DOCS_URL:-https://zarreh.ai/clinical_care_navigator/}
     environment:
       API_INTERNAL_URL: http://cohort-api:8000
     depends_on:

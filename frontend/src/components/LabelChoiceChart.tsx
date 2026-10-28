@@ -5,6 +5,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -23,30 +24,35 @@ export function LabelChoiceChart({ rows }: { rows: LabelChoiceRow[] }) {
   }));
 
   return (
-    <div className="mt-4">
-      <p className="mb-2 text-xs text-neutral-500 dark:text-neutral-400">
-        Bar = cost-model enrolment rate − burden-model enrolment rate.
-        Negative means the cost-trained model enrols that group{" "}
-        <em>less</em> often.
-      </p>
-      <div className="h-80 w-full overflow-x-auto">
+    <div className="mt-4 h-80 w-full overflow-x-auto">
       <ResponsiveContainer width="100%" height="100%" minWidth={480}>
-        <BarChart data={data} layout="vertical" margin={{ left: 24, right: 24, bottom: 24 }}>
-          <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
+        <BarChart data={data} layout="vertical" margin={{ left: 8, right: 32, bottom: 24, top: 8 }}>
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#94a3b8" opacity={0.3} />
           <XAxis
             type="number"
-            label={{ value: "gap (percentage points)", position: "insideBottom", offset: -5 }}
+            tick={{ fill: "#64748b", fontSize: 12 }}
+            tickFormatter={(v: number) => `${v}pp`}
+            label={{ value: "gap (percentage points)", position: "insideBottom", offset: -12, fill: "#64748b", fontSize: 12 }}
           />
-          <YAxis type="category" dataKey="race" width={80} />
-          <Tooltip formatter={(value) => [`${value}pp`, "gap (cost − burden)"]} />
-          <Bar dataKey="gap" radius={4}>
+          <YAxis
+            type="category"
+            dataKey="race"
+            width={90}
+            tick={{ fill: "#475569", fontSize: 13 }}
+            tickFormatter={(v: string) => v.charAt(0).toUpperCase() + v.slice(1)}
+          />
+          <ReferenceLine x={0} stroke="#475569" />
+          <Tooltip
+            cursor={{ fill: "rgba(13,148,136,0.08)" }}
+            formatter={(value) => [`${value}pp`, "cost − burden"]}
+          />
+          <Bar dataKey="gap" radius={4} barSize={22}>
             {data.map((entry) => (
               <Cell key={entry.race} fill={entry.race === TARGET_STRATUM ? "#dc2626" : "#94a3b8"} />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-      </div>
     </div>
   );
 }

@@ -43,6 +43,93 @@ the queue, case detail, and both evidence pages all render real data from
 the trained models. Starting a review will fail at the point it needs to
 call the LLM; this is expected and disclosed on the case page.
 
+### Rebuilding the review queue
+
+`make train` ends by running `python -m data.populate_queue`, which
+**clears** every queued case, review event and paused review checkpoint
+and then re-enqueues the patients the deployed model flags. Stop the API
+before running it, and rerun it whenever `make data` regenerates the
+cohort. Otherwise the queue would point at patients that no longer exist,
+and **Start Review** answers 404 ("not in the scored cohort").
+
+```bash
+uv run python -m data.populate_queue
+```
+
+## Deploying (compose.prod.yaml)
+
+The production stack publishes no host ports; a reverse proxy on the
+external `edge` Docker network is the only way in. The API image
+deliberately excludes `data/` and `artifacts/`; they are bind-mounted.
+
+1. **Prepare data on the host.** Run `make data && make train` there, or
+   copy `data/` (the `.db` and `interim/deidentified/` files) and
+   `artifacts/registry/` from a machine that did. Either way, the queue
+   must be built from the same cohort the API loads (see above).
+2. **Set production values in `.env`:**
+   - `COHORT_ENVIRONMENT=production` (JSON logs instead of the dev console format).
+   - `WEB_PUBLIC_API_URL=https://your.domain/api`: inlined into the
+     frontend bundle at build time, so rebuild after changing it.
+   - `WEB_DOCS_URL` (optional, build time): where the app's **Docs** links
+     point (passed to the frontend as `NEXT_PUBLIC_DOCS_URL`). Defaults to `https://zarreh.ai/clinical_care_navigator/`.
+   - `COHORT_FRONTEND_ORIGINS='["https://your.domain"]'`: the CORS
+     allow-list. Only needed if the API is served from a different
+     origin than the frontend (the proxy layout below keeps them on one
+     origin); the default allows localhost only.
+   - `COHORT_OPENAI_API_KEY` (and optionally LangSmith) for reviews.
+3. **Put the whole site behind authentication at the proxy.** The API
+   has no user accounts: anyone who reaches `POST /queue/{id}/start` or
+   `/decision` can launch LLM runs (which cost money) and record decisions.
+   HTTP basic auth on the proxy covers both the frontend and the browser's
+   direct API calls (the browser resends the credentials automatically).
+4. **Make the proxy overwrite `X-Forwarded-For`.** The API trusts that
+   header from any peer (`--forwarded-allow-ips "*"`, safe only because no
+   port is published) and rate-limits per client IP. If the proxy appends
+   to a client-supplied header instead of replacing it, clients can
+   choose their own IP and bypass the limit.
+
+Caddy (sets `X-Forwarded-For` from the real peer by default; generate the
+hash with `caddy hash-password`):
+
+```caddy
+your.domain {
+    basic_auth {
+        reviewer $2a$14$...bcrypt-hash...
+    }
+    handle_path /api/* {
+        reverse_proxy cohort-api:8000
+    }
+    reverse_proxy cohort-web:3000
+}
+```
+
+nginx (create the file with `htpasswd -c /etc/nginx/.htpasswd reviewer`):
+
+```nginx
+server {
+    server_name your.domain;
+    auth_basic           "Cohort Risk Lab";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+
+    location /api/ {
+        proxy_pass http://cohort-api:8000/;
+        proxy_set_header X-Forwarded-For   $remote_addr;   # overwrite, don't append
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;                               # SSE review stream
+    }
+    location / {
+        proxy_pass http://cohort-web:3000;
+        proxy_set_header X-Forwarded-For $remote_addr;
+    }
+}
+```
+
+Then:
+
+```bash
+docker compose -f compose.prod.yaml up -d --build
+```
+
 ## Regenerating docs assets
 
 ```bash
