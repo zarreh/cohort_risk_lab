@@ -52,6 +52,15 @@ def get_feature_table() -> pd.DataFrame:
     return features
 
 
+@lru_cache
+def get_scored_patient_ids() -> frozenset[str]:
+    """Patient ids `load_case` can score. Lets `/start` reject a queued
+    case whose patient isn't in the current cohort (a queue left over from
+    an earlier `make data`) with a 404, instead of a 202 followed by a
+    failure in the background task the client never sees."""
+    return frozenset(get_feature_table()["PATIENT_ID"])
+
+
 COST_MODEL_VERSION = "v1_cost"
 
 

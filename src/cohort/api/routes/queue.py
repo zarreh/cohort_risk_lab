@@ -9,7 +9,12 @@ from typing import Annotated
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sse_starlette.sse import EventSourceResponse
 
-from cohort.api.deps import get_case_review_graph, get_queue_store, settings_dependency
+from cohort.api.deps import (
+    get_case_review_graph,
+    get_queue_store,
+    get_scored_patient_ids,
+    settings_dependency,
+)
 from cohort.api.rate_limit import DEFAULT_RATE_LIMIT, limiter
 from cohort.api.run_executor import resume_review, start_review
 from cohort.api.schemas import (
@@ -28,6 +33,7 @@ router = APIRouter(prefix="/queue", tags=["queue"])
 QueueStoreDep = Annotated[QueueStore, Depends(get_queue_store)]
 GraphDep = Annotated[CaseReviewGraph, Depends(get_case_review_graph)]
 SettingsDep = Annotated[Settings, Depends(settings_dependency)]
+ScoredPatientIdsDep = Annotated[frozenset[str], Depends(get_scored_patient_ids)]
 
 
 @router.get("")
@@ -75,12 +81,21 @@ def start_case_review(
     queue_store: QueueStoreDep,
     graph: GraphDep,
     settings: SettingsDep,
+    scored_patient_ids: ScoredPatientIdsDep,
 ) -> StartReviewResponse:
     case = queue_store.get_case(patient_id)
     if case is None:
         raise HTTPException(status_code=404, detail="Case not found in the review queue")
     if case.status != "pending":
         raise HTTPException(status_code=409, detail=f"Case is already {case.status!r}")
+    if patient_id not in scored_patient_ids:
+        raise HTTPException(
+            status_code=404,
+            detail="Patient is not in the scored cohort; the queue is stale. "
+            "Rerun `python -m data.populate_queue`.",
+        )
+    if not queue_store.claim(patient_id, "pending", "in_review"):
+        raise HTTPException(status_code=409, detail="Case was started by another request")
 
     background_tasks.add_task(start_review, patient_id, graph, queue_store, settings)
     return StartReviewResponse(patient_id=patient_id, status="in_review")
@@ -112,6 +127,8 @@ def submit_decision(
         raise HTTPException(
             status_code=409, detail=f"Case is {case.status!r}, not awaiting a decision"
         )
+    if not queue_store.claim(patient_id, "awaiting_decision", "deciding"):
+        raise HTTPException(status_code=409, detail="A decision is already being recorded")
 
     background_tasks.add_task(
         resume_review, patient_id, body.decision, body.notes, graph, queue_store, settings

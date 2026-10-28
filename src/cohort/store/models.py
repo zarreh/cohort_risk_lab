@@ -62,7 +62,7 @@ class ReviewCase(BaseModel):
     patient_id: str
     risk_score: float
     risk_tier: str
-    status: str  # "pending" | "in_review" | "awaiting_decision" | "decided"
+    status: str  # "pending" | "in_review" | "awaiting_decision" | "deciding" | "decided"
     created_at: str
     updated_at: str
     decision: str | None

@@ -131,6 +131,8 @@ async def resume_review(
         queue_store.record_decision(patient_id, decision, notes)
     except Exception as exc:
         logger.error("review_resume_failed", patient_id=patient_id, error=str(exc))
+        # The route moved the case to "deciding"; put it back so the clinician can retry.
+        queue_store.set_status(patient_id, "awaiting_decision")
         raise
     finally:
         structlog.contextvars.unbind_contextvars("correlation_id")

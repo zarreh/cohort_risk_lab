@@ -70,3 +70,39 @@ def test_events_are_ordered_and_filterable_by_sequence(store: QueueStore) -> Non
 
     later_events = store.get_events("p1", after_sequence=0)
     assert [e.node for e in later_events] == ["assemble_evidence"]
+
+
+def test_enqueue_cases_inserts_in_bulk_and_counts_new_rows(store: QueueStore) -> None:
+    store.enqueue_case("p1", risk_score=0.5, risk_tier="high")
+
+    inserted = store.enqueue_cases([("p1", 0.99, "high"), ("p2", 0.9, "high"), ("p3", 0.7, "high")])
+
+    assert inserted == 2
+    assert [c.patient_id for c in store.list_queue()] == ["p2", "p3", "p1"]
+    existing = store.get_case("p1")
+    assert existing is not None
+    assert existing.risk_score == 0.5
+
+
+def test_reset_clears_cases_and_events(store: QueueStore) -> None:
+    store.enqueue_case("p1", risk_score=0.5, risk_tier="high")
+    store.append_event("p1", 0, "load_case", "{}")
+
+    store.reset()
+
+    assert store.list_queue() == []
+    assert store.get_events("p1") == []
+
+
+def test_claim_succeeds_only_from_expected_status(store: QueueStore) -> None:
+    store.enqueue_case("p1", risk_score=0.5, risk_tier="high")
+
+    assert store.claim("p1", "pending", "in_review") is True
+    assert store.claim("p1", "pending", "in_review") is False
+    case = store.get_case("p1")
+    assert case is not None
+    assert case.status == "in_review"
+
+
+def test_claim_unknown_patient_returns_false(store: QueueStore) -> None:
+    assert store.claim("nonexistent", "pending", "in_review") is False

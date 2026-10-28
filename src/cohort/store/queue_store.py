@@ -11,6 +11,7 @@ read-only over data `data/build_cohort_store.py` builds ahead of time.
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -81,6 +82,42 @@ class QueueStore:
             (patient_id, risk_score, risk_tier, now, now),
         )
         self._conn.commit()
+
+    def enqueue_cases(self, cases: Iterable[tuple[str, float, str]]) -> int:
+        """Bulk `enqueue_case` in one transaction — committing per row made
+        enqueuing thousands of flagged patients take minutes. Returns the
+        number of rows actually inserted (duplicates are ignored)."""
+        now = _now()
+        before = self._conn.total_changes
+        with self._conn:
+            self._conn.executemany(
+                "INSERT OR IGNORE INTO review_cases "
+                "(patient_id, risk_score, risk_tier, status, created_at, updated_at) "
+                "VALUES (?, ?, ?, 'pending', ?, ?)",
+                ((pid, score, tier, now, now) for pid, score, tier in cases),
+            )
+        return self._conn.total_changes - before
+
+    def reset(self) -> None:
+        """Deletes every case and event. The queue is derived from one
+        scoring of one cohort; after `make data` regenerates the cohort,
+        cases left over from the old one would point at patients that no
+        longer exist."""
+        with self._conn:
+            self._conn.execute("DELETE FROM review_events")
+            self._conn.execute("DELETE FROM review_cases")
+
+    def claim(self, patient_id: str, from_status: str, to_status: str) -> bool:
+        """Moves a case from `from_status` to `to_status` only if it is still
+        in `from_status`, as one conditional UPDATE — so two concurrent
+        requests can't both pass a check-then-set and launch two runs."""
+        with self._conn:
+            cursor = self._conn.execute(
+                "UPDATE review_cases SET status = ?, updated_at = ? "
+                "WHERE patient_id = ? AND status = ?",
+                (to_status, _now(), patient_id, from_status),
+            )
+        return cursor.rowcount == 1
 
     def get_case(self, patient_id: str) -> ReviewCase | None:
         row = self._conn.execute(
