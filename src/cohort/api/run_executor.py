@@ -13,7 +13,7 @@ import json
 import structlog
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
-from pydantic import BaseModel
+from zarreh_agentkit.serialization import iter_node_outputs, json_default
 
 from cohort.graph.builder import CaseReviewGraph
 from cohort.graph.state import CaseReviewState, create_initial_case_review_state
@@ -36,12 +36,6 @@ _GRAPH_NODE_NAMES = frozenset(
 )
 
 
-def _json_default(value: object) -> object:
-    if isinstance(value, BaseModel):
-        return value.model_dump(mode="json")
-    return str(value)
-
-
 async def _stream_and_persist(
     graph: CaseReviewGraph,
     stream_input: CaseReviewState | Command[object],
@@ -60,17 +54,11 @@ async def _stream_and_persist(
     )
     sequence = sequence_start
 
-    async for event in graph.astream_events(stream_input, version="v2", config=config):
-        if event["event"] != "on_chain_end":
-            continue
-        metadata = event.get("metadata") or {}
-        node_name = metadata.get("langgraph_node")
-        if node_name not in _GRAPH_NODE_NAMES or event.get("name") != node_name:
-            continue
-
-        output = event.get("data", {}).get("output")
+    async for node_name, output in iter_node_outputs(
+        graph, stream_input, config=config, node_names=_GRAPH_NODE_NAMES
+    ):
         queue_store.append_event(
-            patient_id, sequence, node_name, json.dumps(output, default=_json_default)
+            patient_id, sequence, node_name, json.dumps(output, default=json_default)
         )
         sequence += 1
 
