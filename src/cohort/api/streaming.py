@@ -10,28 +10,22 @@ A2's `stream_investigation_events`).
 
 from __future__ import annotations
 
-import asyncio
-import json
 from collections.abc import AsyncIterator
+from functools import partial
+from typing import Any
+
+from zarreh_agentkit.runs import replay_and_tail
 
 from cohort.store.queue_store import QueueStore
 
-_POLL_INTERVAL_SECONDS = 0.25
 _ACTIVE_STATUSES = frozenset({"in_review"})
 
 
-async def stream_review_events(queue_store: QueueStore, patient_id: str) -> AsyncIterator[str]:
-    last_sequence = -1
-    while True:
-        events = queue_store.get_events(patient_id, after_sequence=last_sequence)
-        for event in events:
-            yield json.dumps({"node": event.node, "output": json.loads(event.payload_json)})
-            last_sequence = event.sequence
-
+def stream_review_events(queue_store: QueueStore, patient_id: str) -> AsyncIterator[str]:
+    def poll_end() -> dict[str, Any] | None:
         case = queue_store.get_case(patient_id)
-        if case is None or case.status not in _ACTIVE_STATUSES:
-            break
-        await asyncio.sleep(_POLL_INTERVAL_SECONDS)
+        if case is not None and case.status in _ACTIVE_STATUSES:
+            return None
+        return {"status": case.status if case is not None else "not_found"}
 
-    status = case.status if case is not None else "not_found"
-    yield json.dumps({"node": "__end__", "output": {"status": status}})
+    return replay_and_tail(partial(queue_store.get_events, patient_id), poll_end)

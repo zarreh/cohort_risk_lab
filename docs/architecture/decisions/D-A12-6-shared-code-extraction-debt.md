@@ -61,3 +61,11 @@ consumer) and `validation/` (the Track-B-style harness, a different shape
 from the agentic `evals` runner). The docs/CI/frontend duplication this ADR
 also named is unaffected by this update — MkDocs/CI extraction is X5's
 concern, not X2's.
+
+## Update — `zarreh-agentkit` v0.3.0
+
+A12 had kept a private `build_tracing_callbacks` because the v0.2.x version
+relied on an ambient `LANGSMITH_API_KEY` (which `.env` loading never exports),
+so uploads 401'd. v0.3.0 binds the tracer to a `langsmith.Client` carrying the
+key; `cohort.observability` is now a pure re-export, and
+`tests/test_observability.py` guards the library behaviour.
