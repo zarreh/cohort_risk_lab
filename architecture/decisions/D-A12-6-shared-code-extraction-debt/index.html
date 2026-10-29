@@ -981,6 +981,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#update-zarreh-agentkit-v030" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Update — zarreh-agentkit v0.3.0
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1392,6 +1403,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#update-zarreh-agentkit-v030" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Update — zarreh-agentkit v0.3.0
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1473,6 +1495,12 @@ consumer) and <code>validation/</code> (the Track-B-style harness, a different s
 from the agentic <code>evals</code> runner). The docs/CI/frontend duplication this ADR
 also named is unaffected by this update — MkDocs/CI extraction is X5's
 concern, not X2's.</p>
+<h2 id="update-zarreh-agentkit-v030">Update — <code>zarreh-agentkit</code> v0.3.0<a class="headerlink" href="#update-zarreh-agentkit-v030" title="Permanent link">¶</a></h2>
+<p>A12 had kept a private <code>build_tracing_callbacks</code> because the v0.2.x version
+relied on an ambient <code>LANGSMITH_API_KEY</code> (which <code>.env</code> loading never exports),
+so uploads 401'd. v0.3.0 binds the tracer to a <code>langsmith.Client</code> carrying the
+key; <code>cohort.observability</code> is now a pure re-export, and
+<code>tests/test_observability.py</code> guards the library behaviour.</p>
 
 
 
